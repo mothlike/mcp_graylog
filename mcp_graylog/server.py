@@ -283,7 +283,7 @@ def search_logs(request: SearchLogsRequest) -> str:
     Request format: JSON object (not a string) with the following fields:
       {
         "query": "*",
-        "time_range": "24h",
+        "time_range": "1h",
         "fields": ["message", "level"],
         "limit": 10,
         "offset": 0,
@@ -298,48 +298,6 @@ def search_logs(request: SearchLogsRequest) -> str:
 
     Returns:
         JSON string containing search results with messages and metadata
-
-    Examples:
-        Python code:
-            import requests
-            url = "http://localhost:8001/mcp/search_logs"
-            payload = {
-                "query": "*",
-                "stream_id": "5abb3f2f7bb9fd00011595fe",
-                "time_range": "24h",
-                "fields": ["message", "timestamp", "source", "level"],
-                "limit": 10
-            }
-            response = requests.post(url, json=payload)
-            print(response.json())
-
-        Tool call JSON:
-            {
-              "name": "search_logs",
-              "description": "Search logs in Graylog using Elasticsearch query syntax.",
-              "parameters": {
-                "request": {
-                  "query": "*",
-                  "stream_id": "5abb3f2f7bb9fd00011595fe",
-                  "time_range": "24h",
-                  "fields": ["message", "timestamp", "source", "level"],
-                  "limit": 10
-                }
-              }
-            }
-
-        LLM prompt:
-            Get the last 10 events from the 1c_eventlog stream in Graylog. Use the following tool call:
-            search_logs
-            {
-              "request": {
-                "query": "*",
-                "stream_id": "5abb3f2f7bb9fd00011595fe",
-                "time_range": "24h",
-                "fields": ["message", "timestamp", "source", "level"],
-                "limit": 10
-              }
-            }
     """
     # --- BEGIN PATCH ---
     # Accept both dict and string input for request
@@ -385,7 +343,7 @@ def get_log_statistics(request: AggregationRequest) -> str:
     Request format: JSON object (not a string) with the following fields:
       {
         "query": "*",
-        "time_range": "24h",
+        "time_range": "1h",
         "aggregation_type": "terms",
         "field": "source",
         "size": 10,
@@ -482,7 +440,7 @@ def search_stream_logs(request: StreamSearchRequest) -> str:
       {
         "stream_id": "<stream_id>",
         "query": "*",
-        "time_range": "24h",
+        "time_range": "1h",
         "fields": ["message", "level"],
         "limit": 10
       }
