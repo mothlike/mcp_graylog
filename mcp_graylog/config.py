@@ -18,7 +18,7 @@ class GraylogConfig(BaseSettings):
     username: str = Field("admin", description="Graylog username")
     password: str = Field("admin", description="Graylog password")
     verify_ssl: bool = Field(True, description="Verify SSL certificates")
-    timeout: int = Field(30, description="Request timeout in seconds")
+    timeout: int = Field(60, description="Request timeout in seconds")
 
     model_config = ConfigDict(env_prefix="GRAYLOG_", case_sensitive=False)
 

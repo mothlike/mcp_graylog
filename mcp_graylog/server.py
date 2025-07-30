@@ -280,9 +280,21 @@ def search_logs(request: SearchLogsRequest) -> str:
     """
     Search logs in Graylog using Elasticsearch query syntax.
 
+    Request format: JSON object with the following fields:
+      {
+        "query": "*",
+        "time_range": "24h",
+        "fields": ["message", "level"],
+        "limit": 10,
+        "offset": 0,
+        "sort": "timestamp",
+        "sort_direction": "desc",
+        "stream_id": "<stream_id>"
+      }
+    All fields except 'query' are optional. If no time_range is specified, defaults to 1 hour.
+
     Args:
-        request: Search parameters including query, time range, and filters.
-                If no time range is specified, defaults to 1 hour.
+        request: Search parameters as a JSON object (not a string).
 
     Returns:
         JSON string containing search results with messages and metadata
@@ -402,17 +414,18 @@ def search_stream_logs(request: StreamSearchRequest) -> str:
     """
     Search logs within a specific Graylog stream.
 
-    This tool allows you to search for log messages within a specific Graylog stream.
-    You can filter by query terms, time range, and specify which fields to return.
-    If no time range is specified, defaults to 1 hour.
-
-    Examples:
-    - Get last 10 messages from 1c_eventlog: stream_id='5abb3f2f7bb9fd00011595fe', query='*', limit=10
-    - Get error messages from last hour: query='level:ERROR', time_range='1h'
-    - Get specific fields: fields=['message', 'level', 'source', 'timestamp']
+    Request format: JSON object with the following fields:
+      {
+        "stream_id": "<stream_id>",
+        "query": "*",
+        "time_range": "24h",
+        "fields": ["message", "level"],
+        "limit": 10
+      }
+    All fields except 'stream_id' and 'query' are optional. If no time_range is specified, defaults to 1 hour.
 
     Args:
-        request: Stream search parameters including stream ID and query
+        request: Stream search parameters as a JSON object (not a string).
 
     Returns:
         JSON string containing search results with messages and metadata from the specified stream
