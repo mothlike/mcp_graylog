@@ -89,6 +89,8 @@ class GraylogClient:
             logger.debug(f"Headers: {dict(self.session.headers)}")
             if data:
                 logger.debug(f"Request data: {data}")
+            if params:
+                logger.debug(f"Request params: {params}")
 
             response = self.session.request(
                 method=method, url=url, params=params, json=data, timeout=self.timeout
@@ -115,21 +117,53 @@ class GraylogClient:
             raise
 
     def _parse_time_range(self, time_range: str) -> Dict[str, Any]:
-        """Parse time range string into Graylog format for /relative endpoint."""
+        """
+        Parse time range string into Graylog format.
+
+        Graylog API expects relative time ranges in seconds for the /relative endpoint.
+        For absolute time ranges, it expects ISO 8601 format.
+        """
         if not time_range:
             return {}
+
         # Supported units and their conversion to seconds
         units = {"s": 1, "m": 60, "h": 3600, "d": 86400, "w": 604800}
         unit = time_range[-1]
         value = time_range[:-1]
+
         if unit in units and value.isdigit():
+            # Convert to seconds for Graylog API
             seconds = int(value) * units[unit]
             return {"range": seconds}
-        # If not a recognized relative range, fallback to previous logic (absolute)
-        return {"range": time_range}
+
+        # If not a recognized relative range, assume it's an absolute time range
+        # Graylog expects ISO 8601 format for absolute ranges
+        try:
+            # Try to parse as ISO 8601 format
+            datetime.fromisoformat(time_range.replace("Z", "+00:00"))
+            return {"range": time_range}
+        except ValueError:
+            # If not ISO format, return as-is (Graylog will handle the error)
+            logger.warning(f"Unrecognized time range format: {time_range}")
+            return {"range": time_range}
 
     def search_logs(self, params: QueryParams) -> Dict[str, Any]:
-        """Search logs using Graylog API."""
+        """
+        Search logs using Graylog API.
+
+        Uses the /api/search/universal/relative endpoint which expects:
+        - query: Search query string
+        - range: Time range in seconds (for relative) or ISO 8601 (for absolute)
+        - limit: Maximum number of results
+        - offset: Result offset
+        - sort: Sort field with direction (e.g., "timestamp:desc")
+        - fields: Comma-separated list of fields to return
+        - streams: List of stream IDs to filter by
+        """
+        # Validate required parameters
+        if not params.query:
+            raise ValueError("Query parameter is required")
+
         search_params = {
             "query": params.query,
             "limit": params.limit,
@@ -142,13 +176,15 @@ class GraylogClient:
 
         # Add time range - default to 1h if not specified
         time_range = params.time_range or "1h"
-        search_params.update(self._parse_time_range(time_range))
+        time_range_parsed = self._parse_time_range(time_range)
+        if time_range_parsed:
+            search_params.update(time_range_parsed)
 
-        # Add fields filter
+        # Add fields filter - Graylog expects comma-separated string
         if params.fields:
             search_params["fields"] = ",".join(params.fields)
 
-        # Add stream filter - ensure it's passed as a list
+        # Add stream filter - Graylog expects list of stream IDs
         if params.stream_id:
             search_params["streams"] = [params.stream_id]
 
@@ -173,17 +209,47 @@ class GraylogClient:
     def get_log_statistics(
         self, query: str, time_range: str, aggregation: AggregationParams
     ) -> Dict[str, Any]:
-        """Get log statistics and aggregations."""
-        search_params = {
+        """
+        Get log statistics and aggregations.
+
+        Uses the /api/search/universal/relative/{aggregation_type} endpoint.
+        Graylog expects POST with JSON body containing:
+        - query: Search query
+        - range: Time range in seconds (for relative) or ISO 8601 (for absolute)
+        - field: Field to aggregate on
+        - size: Number of buckets
+        - interval: Time interval for date histograms (optional)
+        """
+        # Validate required parameters
+        if not query:
+            raise ValueError("Query parameter is required")
+        if not aggregation.field:
+            raise ValueError("Aggregation field is required")
+
+        # Parse time range
+        time_range_parsed = self._parse_time_range(time_range)
+        if not time_range_parsed:
+            raise ValueError("Valid time range is required")
+
+        # Build request body according to Graylog API specification
+        request_body = {
             "query": query,
-            "range": self._parse_time_range(time_range).get("range", {}),
-            "interval": aggregation.interval,
+            "range": time_range_parsed["range"],
             "field": aggregation.field,
             "size": aggregation.size,
         }
 
+        # Add interval for date histograms
+        if aggregation.interval:
+            request_body["interval"] = aggregation.interval
+
+        # Remove None values
+        request_body = {k: v for k, v in request_body.items() if v is not None}
+
+        logger.debug(f"Aggregation request body: {request_body}")
+
         endpoint = f"/api/search/universal/relative/{aggregation.type}"
-        return self._make_request("POST", endpoint, data=search_params)
+        return self._make_request("POST", endpoint, data=request_body)
 
     def list_streams(self) -> List[Dict[str, Any]]:
         """List all available streams."""
@@ -192,6 +258,8 @@ class GraylogClient:
 
     def get_stream_info(self, stream_id: str) -> Dict[str, Any]:
         """Get detailed information about a stream."""
+        if not stream_id:
+            raise ValueError("Stream ID is required")
         return self._make_request("GET", f"/api/streams/{stream_id}")
 
     def search_stream_logs(self, stream_id: str, params: QueryParams) -> Dict[str, Any]:
@@ -205,6 +273,10 @@ class GraylogClient:
         Returns:
             Dictionary containing search results with messages and metadata
         """
+        # Validate stream_id
+        if not stream_id:
+            raise ValueError("Stream ID is required")
+
         # Ensure stream_id is set in params
         params.stream_id = stream_id
 

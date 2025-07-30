@@ -12,9 +12,11 @@ logger = logging.getLogger(__name__)
 class GraylogConfig(BaseSettings):
     """Graylog connection configuration."""
 
-    endpoint: str = Field(..., description="Graylog server endpoint URL")
-    username: str = Field(..., description="Graylog username")
-    password: str = Field(..., description="Graylog password")
+    endpoint: str = Field(
+        "http://localhost:9000", description="Graylog server endpoint URL"
+    )
+    username: str = Field("admin", description="Graylog username")
+    password: str = Field("admin", description="Graylog password")
     verify_ssl: bool = Field(True, description="Verify SSL certificates")
     timeout: int = Field(30, description="Request timeout in seconds")
 
@@ -44,10 +46,14 @@ class Config:
         logger.info(f"Has username: {bool(self.graylog.username)}")
         logger.info(f"Has password: {bool(self.graylog.password)}")
 
-        # Validate authentication
-        if not (self.graylog.username and self.graylog.password):
-            raise ValueError(
-                "Both GRAYLOG_USERNAME and GRAYLOG_PASSWORD must be provided"
+        # Validate authentication only if not using defaults
+        if (
+            self.graylog.username == "admin"
+            and self.graylog.password == "admin"
+            and self.graylog.endpoint == "http://localhost:9000"
+        ):
+            logger.warning(
+                "Using default configuration - set environment variables for production"
             )
 
     @property

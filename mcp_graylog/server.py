@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from fastmcp import FastMCP
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 
 from .client import GraylogClient, QueryParams, AggregationParams
 from .config import config
@@ -45,6 +45,46 @@ class SearchLogsRequest(BaseModel):
     sort_direction: str = Field("desc", description="Sort direction (asc/desc)")
     stream_id: Optional[str] = Field(None, description="Stream ID to search in")
 
+    @validator("query")
+    def validate_query(cls, v):
+        """Validate that query is not empty."""
+        if not v or not v.strip():
+            raise ValueError("Query cannot be empty")
+        return v.strip()
+
+    @validator("limit")
+    def validate_limit(cls, v):
+        """Validate limit is within reasonable bounds."""
+        if v < 1:
+            raise ValueError("Limit must be at least 1")
+        if v > 1000:
+            raise ValueError("Limit cannot exceed 1000")
+        return v
+
+    @validator("time_range")
+    def validate_time_range(cls, v):
+        """Validate time range format."""
+        if v is None:
+            return v
+
+        # Check for relative time ranges (e.g., '1h', '24h', '7d')
+        import re
+
+        relative_pattern = r"^\d+[smhdw]$"
+        if re.match(relative_pattern, v):
+            return v
+
+        # Check for ISO 8601 format (absolute time ranges)
+        try:
+            from datetime import datetime
+
+            datetime.fromisoformat(v.replace("Z", "+00:00"))
+            return v
+        except ValueError:
+            raise ValueError(
+                f"Invalid time range format: {v}. Use relative (e.g., '1h') or ISO 8601 format"
+            )
+
 
 class AggregationRequest(BaseModel):
     """Request model for log aggregations."""
@@ -59,6 +99,72 @@ class AggregationRequest(BaseModel):
     interval: Optional[str] = Field(
         None, description="Time interval for date histograms"
     )
+
+    @validator("query")
+    def validate_query(cls, v):
+        """Validate that query is not empty."""
+        if not v or not v.strip():
+            raise ValueError("Query cannot be empty")
+        return v.strip()
+
+    @validator("aggregation_type")
+    def validate_aggregation_type(cls, v):
+        """Validate aggregation type."""
+        valid_types = [
+            "terms",
+            "date_histogram",
+            "cardinality",
+            "stats",
+            "min",
+            "max",
+            "avg",
+            "sum",
+        ]
+        if v not in valid_types:
+            raise ValueError(
+                f"Invalid aggregation type: {v}. Valid types: {valid_types}"
+            )
+        return v
+
+    @validator("field")
+    def validate_field(cls, v):
+        """Validate that field is not empty."""
+        if not v or not v.strip():
+            raise ValueError("Field cannot be empty")
+        return v.strip()
+
+    @validator("size")
+    def validate_size(cls, v):
+        """Validate size is within reasonable bounds."""
+        if v < 1:
+            raise ValueError("Size must be at least 1")
+        if v > 100:
+            raise ValueError("Size cannot exceed 100")
+        return v
+
+    @validator("time_range")
+    def validate_time_range(cls, v):
+        """Validate time range format."""
+        if not v or not v.strip():
+            raise ValueError("Time range is required")
+
+        # Check for relative time ranges (e.g., '1h', '24h', '7d')
+        import re
+
+        relative_pattern = r"^\d+[smhdw]$"
+        if re.match(relative_pattern, v):
+            return v
+
+        # Check for ISO 8601 format (absolute time ranges)
+        try:
+            from datetime import datetime
+
+            datetime.fromisoformat(v.replace("Z", "+00:00"))
+            return v
+        except ValueError:
+            raise ValueError(
+                f"Invalid time range format: {v}. Use relative (e.g., '1h') or ISO 8601 format"
+            )
 
 
 class StreamSearchRequest(BaseModel):
@@ -79,6 +185,53 @@ class StreamSearchRequest(BaseModel):
         None, description="Fields to return (e.g., ['message', 'level', 'source'])"
     )
     limit: int = Field(50, description="Maximum number of results (1-100)")
+
+    @validator("stream_id")
+    def validate_stream_id(cls, v):
+        """Validate that stream_id is not empty."""
+        if not v or not v.strip():
+            raise ValueError("Stream ID cannot be empty")
+        return v.strip()
+
+    @validator("query")
+    def validate_query(cls, v):
+        """Validate that query is not empty."""
+        if not v or not v.strip():
+            raise ValueError("Query cannot be empty")
+        return v.strip()
+
+    @validator("limit")
+    def validate_limit(cls, v):
+        """Validate limit is within reasonable bounds."""
+        if v < 1:
+            raise ValueError("Limit must be at least 1")
+        if v > 100:
+            raise ValueError("Limit cannot exceed 100")
+        return v
+
+    @validator("time_range")
+    def validate_time_range(cls, v):
+        """Validate time range format."""
+        if v is None:
+            return v
+
+        # Check for relative time ranges (e.g., '1h', '24h', '7d')
+        import re
+
+        relative_pattern = r"^\d+[smhdw]$"
+        if re.match(relative_pattern, v):
+            return v
+
+        # Check for ISO 8601 format (absolute time ranges)
+        try:
+            from datetime import datetime
+
+            datetime.fromisoformat(v.replace("Z", "+00:00"))
+            return v
+        except ValueError:
+            raise ValueError(
+                f"Invalid time range format: {v}. Use relative (e.g., '1h') or ISO 8601 format"
+            )
 
 
 # Health check endpoint
@@ -135,6 +288,10 @@ def search_logs(request: SearchLogsRequest) -> str:
         JSON string containing search results with messages and metadata
     """
     try:
+        # Validate request
+        if not request.query:
+            return json.dumps({"error": "Query parameter is required"}, indent=2)
+
         params = QueryParams(
             query=request.query,
             time_range=request.time_range,
@@ -149,6 +306,9 @@ def search_logs(request: SearchLogsRequest) -> str:
         result = graylog_client.search_logs(params)
         return json.dumps(result, indent=2)
 
+    except ValueError as e:
+        logger.error(f"Validation error in search_logs: {e}")
+        return json.dumps({"error": f"Validation error: {str(e)}"}, indent=2)
     except Exception as e:
         logger.error(f"Search logs failed: {e}")
         return json.dumps({"error": str(e)}, indent=2)
@@ -166,6 +326,14 @@ def get_log_statistics(request: AggregationRequest) -> str:
         JSON string containing aggregation results
     """
     try:
+        # Validate request
+        if not request.query:
+            return json.dumps({"error": "Query parameter is required"}, indent=2)
+        if not request.field:
+            return json.dumps({"error": "Field parameter is required"}, indent=2)
+        if not request.time_range:
+            return json.dumps({"error": "Time range parameter is required"}, indent=2)
+
         aggregation = AggregationParams(
             type=request.aggregation_type,
             field=request.field,
@@ -178,6 +346,9 @@ def get_log_statistics(request: AggregationRequest) -> str:
         )
         return json.dumps(result, indent=2)
 
+    except ValueError as e:
+        logger.error(f"Validation error in get_log_statistics: {e}")
+        return json.dumps({"error": f"Validation error: {str(e)}"}, indent=2)
     except Exception as e:
         logger.error(f"Get log statistics failed: {e}")
         return json.dumps({"error": str(e)}, indent=2)
@@ -212,9 +383,15 @@ def get_stream_info(stream_id: str) -> str:
         JSON string containing stream details
     """
     try:
-        stream_info = graylog_client.get_stream_info(stream_id)
+        if not stream_id or not stream_id.strip():
+            return json.dumps({"error": "Stream ID is required"}, indent=2)
+
+        stream_info = graylog_client.get_stream_info(stream_id.strip())
         return json.dumps(stream_info, indent=2)
 
+    except ValueError as e:
+        logger.error(f"Validation error in get_stream_info: {e}")
+        return json.dumps({"error": f"Validation error: {str(e)}"}, indent=2)
     except Exception as e:
         logger.error(f"Get stream info failed: {e}")
         return json.dumps({"error": str(e)}, indent=2)
@@ -241,21 +418,11 @@ def search_stream_logs(request: StreamSearchRequest) -> str:
         JSON string containing search results with messages and metadata from the specified stream
     """
     try:
-        # --- BEGIN: Robust request validation ---
-        if not isinstance(request, StreamSearchRequest):
-            # Try to parse from dict if possible
-            try:
-                if isinstance(request, dict):
-                    request = StreamSearchRequest(**request)
-                else:
-                    return json.dumps({"error": "Request must be a StreamSearchRequest object or dict."}, indent=2)
-            except Exception as e:
-                logger.error(f"Failed to parse request as StreamSearchRequest: {e}")
-                return json.dumps({"error": f"Malformed request: {e}"}, indent=2)
-        # Validate required fields
-        if not request.stream_id or not request.query:
-            return json.dumps({"error": "Missing required fields: 'stream_id' and 'query' are required."}, indent=2)
-        # --- END: Robust request validation ---
+        # Validate request
+        if not request.stream_id or not request.stream_id.strip():
+            return json.dumps({"error": "Stream ID is required"}, indent=2)
+        if not request.query or not request.query.strip():
+            return json.dumps({"error": "Query is required"}, indent=2)
 
         # Create query parameters for stream search
         params = QueryParams(
@@ -270,6 +437,9 @@ def search_stream_logs(request: StreamSearchRequest) -> str:
         result = graylog_client.search_stream_logs(request.stream_id, params)
         return json.dumps(result, indent=2)
 
+    except ValueError as e:
+        logger.error(f"Validation error in search_stream_logs: {e}")
+        return json.dumps({"error": f"Validation error: {str(e)}"}, indent=2)
     except Exception as e:
         logger.error(f"Search stream logs failed: {e}")
         return json.dumps({"error": str(e)}, indent=2)
@@ -327,6 +497,10 @@ def get_error_logs(time_range: str = "1h", limit: int = 100) -> str:
         JSON string containing error logs
     """
     try:
+        # Validate parameters
+        if limit < 1 or limit > 1000:
+            return json.dumps({"error": "Limit must be between 1 and 1000"}, indent=2)
+
         params = QueryParams(
             query="level:ERROR OR level:CRITICAL OR level:FATAL",
             time_range=time_range,
@@ -337,6 +511,9 @@ def get_error_logs(time_range: str = "1h", limit: int = 100) -> str:
         result = graylog_client.search_logs(params)
         return json.dumps(result, indent=2)
 
+    except ValueError as e:
+        logger.error(f"Validation error in get_error_logs: {e}")
+        return json.dumps({"error": f"Validation error: {str(e)}"}, indent=2)
     except Exception as e:
         logger.error(f"Get error logs failed: {e}")
         return json.dumps({"error": str(e)}, indent=2)
@@ -361,6 +538,9 @@ def get_log_count_by_level(time_range: str = "1h") -> str:
         )
         return json.dumps(result, indent=2)
 
+    except ValueError as e:
+        logger.error(f"Validation error in get_log_count_by_level: {e}")
+        return json.dumps({"error": f"Validation error: {str(e)}"}, indent=2)
     except Exception as e:
         logger.error(f"Get log count by level failed: {e}")
         return json.dumps({"error": str(e)}, indent=2)
@@ -381,6 +561,9 @@ def search_streams_by_name(stream_name: str) -> str:
         JSON string containing matching streams with their IDs and metadata
     """
     try:
+        if not stream_name or not stream_name.strip():
+            return json.dumps({"error": "Stream name is required"}, indent=2)
+
         all_streams = graylog_client.list_streams()
 
         # Filter streams by name (case-insensitive)
@@ -408,6 +591,9 @@ def search_streams_by_name(stream_name: str) -> str:
             indent=2,
         )
 
+    except ValueError as e:
+        logger.error(f"Validation error in search_streams_by_name: {e}")
+        return json.dumps({"error": f"Validation error: {str(e)}"}, indent=2)
     except Exception as e:
         logger.error(f"Search streams by name failed: {e}")
         return json.dumps({"error": str(e)}, indent=2)
@@ -429,6 +615,9 @@ def get_last_event_from_stream(stream_id: str, time_range: str = "1h") -> str:
         JSON string containing the last event from the specified stream
     """
     try:
+        if not stream_id or not stream_id.strip():
+            return json.dumps({"error": "Stream ID is required"}, indent=2)
+
         params = QueryParams(
             query="*", time_range=time_range, limit=1, stream_id=stream_id
         )
@@ -436,6 +625,9 @@ def get_last_event_from_stream(stream_id: str, time_range: str = "1h") -> str:
         result = graylog_client.search_stream_logs(stream_id, params)
         return json.dumps(result, indent=2)
 
+    except ValueError as e:
+        logger.error(f"Validation error in get_last_event_from_stream: {e}")
+        return json.dumps({"error": f"Validation error: {str(e)}"}, indent=2)
     except Exception as e:
         logger.error(f"Get last event from stream failed: {e}")
         return json.dumps({"error": str(e)}, indent=2)
