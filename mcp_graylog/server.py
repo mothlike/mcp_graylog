@@ -299,8 +299,15 @@ def search_logs(request: SearchLogsRequest) -> str:
     Returns:
         JSON string containing search results with messages and metadata
     """
+    # --- BEGIN PATCH ---
+    # Accept both dict and string input for request
     if isinstance(request, str):
-        return json.dumps({"error": "Request must be a JSON object, not a string."}, indent=2)
+        try:
+            request_dict = json.loads(request)
+            request = SearchLogsRequest(**request_dict)
+        except Exception as e:
+            return json.dumps({"error": f"Request must be a JSON object or a JSON string that can be parsed into an object. Error: {str(e)}"}, indent=2)
+    # --- END PATCH ---
     try:
         # Validate request
         if not request.query:
