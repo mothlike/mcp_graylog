@@ -87,6 +87,8 @@ The MCP server now includes comprehensive request validation to ensure all reque
 #### `search_logs`
 Search logs using Elasticsearch query syntax.
 
+> ⚠️ **Request must be a JSON object, not a string.**
+
 **Parameters:**
 - `query` (string, required): Search query (Elasticsearch syntax)
 - `time_range` (string, optional): Time range (e.g., '1h', '24h', '7d'). Defaults to '1h'
@@ -112,6 +114,8 @@ Search logs using Elasticsearch query syntax.
 #### `search_stream_logs`
 Search logs within a specific Graylog stream.
 
+> ⚠️ **Request must be a JSON object, not a string.**
+
 **Parameters:**
 - `stream_id` (string, required): Stream ID to search in
 - `query` (string, required): Search query
@@ -134,6 +138,8 @@ Search logs within a specific Graylog stream.
 
 #### `get_log_statistics`
 Get log statistics and aggregations from Graylog.
+
+> ⚠️ **Request must be a JSON object, not a string.**
 
 **Parameters:**
 - `query` (string, required): Search query

@@ -280,7 +280,7 @@ def search_logs(request: SearchLogsRequest) -> str:
     """
     Search logs in Graylog using Elasticsearch query syntax.
 
-    Request format: JSON object with the following fields:
+    Request format: JSON object (not a string) with the following fields:
       {
         "query": "*",
         "time_range": "24h",
@@ -299,6 +299,8 @@ def search_logs(request: SearchLogsRequest) -> str:
     Returns:
         JSON string containing search results with messages and metadata
     """
+    if isinstance(request, str):
+        return json.dumps({"error": "Request must be a JSON object, not a string."}, indent=2)
     try:
         # Validate request
         if not request.query:
@@ -331,12 +333,25 @@ def get_log_statistics(request: AggregationRequest) -> str:
     """
     Get log statistics and aggregations from Graylog.
 
+    Request format: JSON object (not a string) with the following fields:
+      {
+        "query": "*",
+        "time_range": "24h",
+        "aggregation_type": "terms",
+        "field": "source",
+        "size": 10,
+        "interval": "1h"
+      }
+    All fields except 'query', 'time_range', 'aggregation_type', and 'field' are optional.
+
     Args:
-        request: Aggregation parameters including query, time range, and aggregation type
+        request: Aggregation parameters as a JSON object (not a string).
 
     Returns:
         JSON string containing aggregation results
     """
+    if isinstance(request, str):
+        return json.dumps({"error": "Request must be a JSON object, not a string."}, indent=2)
     try:
         # Validate request
         if not request.query:
@@ -414,7 +429,7 @@ def search_stream_logs(request: StreamSearchRequest) -> str:
     """
     Search logs within a specific Graylog stream.
 
-    Request format: JSON object with the following fields:
+    Request format: JSON object (not a string) with the following fields:
       {
         "stream_id": "<stream_id>",
         "query": "*",
@@ -430,6 +445,8 @@ def search_stream_logs(request: StreamSearchRequest) -> str:
     Returns:
         JSON string containing search results with messages and metadata from the specified stream
     """
+    if isinstance(request, str):
+        return json.dumps({"error": "Request must be a JSON object, not a string."}, indent=2)
     try:
         # Validate request
         if not request.stream_id or not request.stream_id.strip():

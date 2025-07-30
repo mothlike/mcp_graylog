@@ -241,6 +241,23 @@ The MCP Graylog server provides the following tools:
 }
 ```
 
+## ⚠️ Important Note on Request Format
+
+All API/tool requests that accept parameters (such as search_logs, search_stream_logs, get_log_statistics, etc.) must be provided as JSON objects, NOT as strings. Passing a string will result in an error.
+
+**Correct:**
+```json
+{
+  "stream_id": "5abb3f2f7bb9fd00011595fe",
+  "query": "*",
+  "limit": 10
+}
+```
+**Incorrect:**
+```json
+"{stream_id:5abb3f2f7bb9fd00011595fe, query: *, limit: 10}"
+```
+
 ## 🔧 Development
 
 ### Available Commands
