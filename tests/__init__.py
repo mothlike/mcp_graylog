@@ -1,1 +1,1 @@
-"""Tests for MCP Graylog server.""" 
+"""Tests for MCP Graylog server."""
