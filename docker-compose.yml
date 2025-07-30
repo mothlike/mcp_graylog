@@ -1,0 +1,18 @@
+services:
+  mcp-graylog:
+    build: .
+    container_name: mcp-graylog-server
+    ports:
+      - "8000:8000"
+    environment:
+      - GRAYLOG_ENDPOINT=${GRAYLOG_ENDPOINT:-https://mock-graylog-server:9000}
+      - GRAYLOG_USERNAME=${GRAYLOG_USERNAME:-admin}
+      - GRAYLOG_PASSWORD=${GRAYLOG_PASSWORD:-admin}
+      - GRAYLOG_VERIFY_SSL=${GRAYLOG_VERIFY_SSL:-false}
+      - GRAYLOG_TIMEOUT=${GRAYLOG_TIMEOUT:-5}
+      - MCP_SERVER_PORT=8000
+      - MCP_SERVER_HOST=0.0.0.0
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped 
