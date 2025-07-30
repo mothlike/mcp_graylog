@@ -241,6 +241,22 @@ def search_stream_logs(request: StreamSearchRequest) -> str:
         JSON string containing search results with messages and metadata from the specified stream
     """
     try:
+        # --- BEGIN: Robust request validation ---
+        if not isinstance(request, StreamSearchRequest):
+            # Try to parse from dict if possible
+            try:
+                if isinstance(request, dict):
+                    request = StreamSearchRequest(**request)
+                else:
+                    return json.dumps({"error": "Request must be a StreamSearchRequest object or dict."}, indent=2)
+            except Exception as e:
+                logger.error(f"Failed to parse request as StreamSearchRequest: {e}")
+                return json.dumps({"error": f"Malformed request: {e}"}, indent=2)
+        # Validate required fields
+        if not request.stream_id or not request.query:
+            return json.dumps({"error": "Missing required fields: 'stream_id' and 'query' are required."}, indent=2)
+        # --- END: Robust request validation ---
+
         # Create query parameters for stream search
         params = QueryParams(
             query=request.query,
