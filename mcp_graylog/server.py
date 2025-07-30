@@ -35,7 +35,7 @@ class SearchLogsRequest(BaseModel):
 
     query: str = Field(..., description="Search query (Elasticsearch syntax)")
     time_range: Optional[str] = Field(
-        None,
+        '1h',  # <-- Set default to 1h
         description="Time range (e.g., '1h', '24h', '7d'). Defaults to '1h' if not specified.",
     )
     fields: Optional[List[str]] = Field(None, description="Fields to return")
@@ -90,7 +90,7 @@ class AggregationRequest(BaseModel):
     """Request model for log aggregations."""
 
     query: str = Field(..., description="Search query")
-    time_range: str = Field(..., description="Time range")
+    time_range: str = Field('1h', description="Time range (e.g., '1h', '24h', '7d'). Defaults to '1h' if not specified.")
     aggregation_type: str = Field(
         ..., description="Aggregation type (terms, date_histogram, etc.)"
     )
@@ -178,7 +178,7 @@ class StreamSearchRequest(BaseModel):
         description="Search query (e.g., '*' for all messages, 'level:ERROR' for errors)",
     )
     time_range: Optional[str] = Field(
-        None,
+        '1h',
         description="Time range (e.g., '1h', '24h', '7d'). Defaults to '1h' if not specified.",
     )
     fields: Optional[List[str]] = Field(
@@ -298,6 +298,48 @@ def search_logs(request: SearchLogsRequest) -> str:
 
     Returns:
         JSON string containing search results with messages and metadata
+
+    Examples:
+        Python code:
+            import requests
+            url = "http://localhost:8001/mcp/search_logs"
+            payload = {
+                "query": "*",
+                "stream_id": "5abb3f2f7bb9fd00011595fe",
+                "time_range": "24h",
+                "fields": ["message", "timestamp", "source", "level"],
+                "limit": 10
+            }
+            response = requests.post(url, json=payload)
+            print(response.json())
+
+        Tool call JSON:
+            {
+              "name": "search_logs",
+              "description": "Search logs in Graylog using Elasticsearch query syntax.",
+              "parameters": {
+                "request": {
+                  "query": "*",
+                  "stream_id": "5abb3f2f7bb9fd00011595fe",
+                  "time_range": "24h",
+                  "fields": ["message", "timestamp", "source", "level"],
+                  "limit": 10
+                }
+              }
+            }
+
+        LLM prompt:
+            Get the last 10 events from the 1c_eventlog stream in Graylog. Use the following tool call:
+            search_logs
+            {
+              "request": {
+                "query": "*",
+                "stream_id": "5abb3f2f7bb9fd00011595fe",
+                "time_range": "24h",
+                "fields": ["message", "timestamp", "source", "level"],
+                "limit": 10
+              }
+            }
     """
     # --- BEGIN PATCH ---
     # Accept both dict and string input for request

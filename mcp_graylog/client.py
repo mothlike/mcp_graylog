@@ -27,8 +27,7 @@ class QueryParams(BaseModel):
 
     query: str = Field(..., description="Search query")
     time_range: Optional[str] = Field(
-        None, description="Time range (e.g., '1h', '24h', '7d')"
-    )
+        '1h', description="Time range (e.g., '1h', '24h', '7d'). Defaults to '1h' if not specified.")
     fields: Optional[List[str]] = Field(None, description="Fields to return")
     limit: int = Field(50, description="Maximum number of results")
     offset: int = Field(0, description="Result offset")
