@@ -36,11 +36,11 @@ test_installation() {
     log "Testing installation..."
     
     # Test if we can import the config
-    if python -c "from mcp_graylog.config import config; print('✅ Config import successful')" 2>/dev/null; then
-        log "✅ Installation successful!"
+    if python -c "from mcp_graylog.config import config; print('Config import successful')" 2>/dev/null; then
+        log "Installation successful!"
         return 0
     else
-        log "❌ Installation failed. Please check the error messages above."
+        log "Installation failed. Please check the error messages above."
         return 1
     fi
 }

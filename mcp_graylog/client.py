@@ -455,18 +455,16 @@ class GraylogClient:
 
             # Then test API authentication
             self.get_system_info()
-            logger.info("✅ Graylog connection successful")
+            logger.info("Graylog connection successful")
             return True
         except requests.exceptions.HTTPError as e:
             if "401" in str(e):
-                logger.error(
-                    "❌ Authentication failed - check your username and password"
-                )
+                logger.error("Authentication failed - check your username and password")
                 logger.error(
                     f"   Authorization header: {self.session.headers.get('Authorization', 'None')[:20]}..."
                 )
             else:
-                logger.error(f"❌ HTTP error during connection test: {e}")
+                logger.error(f"HTTP error during connection test: {e}")
             return False
         except requests.exceptions.ConnectionError as e:
             # Handle connection errors more gracefully for mock endpoints
@@ -477,7 +475,7 @@ class GraylogClient:
                 logger.debug(f"Mock Graylog server not available: {e}")
                 return False
             else:
-                logger.error(f"❌ Connection test failed: {e}")
+                logger.error(f"Connection test failed: {e}")
                 return False
         except Exception as e:
             # Handle other errors more gracefully for mock endpoints
@@ -488,5 +486,5 @@ class GraylogClient:
                 logger.debug(f"Mock Graylog server not available: {e}")
                 return False
             else:
-                logger.error(f"❌ Connection test failed: {e}")
+                logger.error(f"Connection test failed: {e}")
                 return False

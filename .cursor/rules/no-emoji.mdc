@@ -1,0 +1,5 @@
+---
+alwaysApply: true
+rules:
+  - Do not use emoji in answers, documentation, commentaries, code.
+---

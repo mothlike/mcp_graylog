@@ -6,7 +6,7 @@ A Model Context Protocol (MCP) server for integrating with Graylog, enabling AI 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Using Docker (Recommended)
 
@@ -38,19 +38,19 @@ cd mcp_graylog
 ./start.sh
 ```
 
-## ✨ Features
+## Features
 
-- **🔍 Advanced Log Querying**: Query Graylog logs using Elasticsearch query syntax
-- **📊 Stream Management**: Search across multiple indices and streams
-- **⏰ Time-based Filtering**: Filter logs by time range, fields, and custom criteria
-- **📈 Statistics & Aggregations**: Retrieve log statistics and aggregations
-- **🐳 Docker Support**: Full container support with environment-based configuration
-- **🤖 Cursor Integration**: Seamless integration with Cursor AI assistant
-- **🏥 Health Monitoring**: Built-in health checks and system monitoring
-- **🛡️ Error Handling**: Comprehensive error handling and logging
-- **🔧 Development Tools**: Complete development toolchain with testing and linting
+- **Advanced Log Querying**: Query Graylog logs using Elasticsearch query syntax
+- **Stream Management**: Search across multiple indices and streams
+- **Time-based Filtering**: Filter logs by time range, fields, and custom criteria
+- **Statistics & Aggregations**: Retrieve log statistics and aggregations
+- **Docker Support**: Full container support with environment-based configuration
+- **Cursor Integration**: Seamless integration with Cursor AI assistant
+- **Health Monitoring**: Built-in health checks and system monitoring
+- **Error Handling**: Comprehensive error handling and logging
+- **Development Tools**: Complete development toolchain with testing and linting
 
-## 📋 Table of Contents
+## Table of Contents
 
 - [Installation](#installation)
 - [Configuration](#configuration)
@@ -60,7 +60,7 @@ cd mcp_graylog
 - [Troubleshooting](#troubleshooting)
 - [Additional Documentation](#additional-documentation)
 
-## 🛠️ Installation
+## Installation
 
 ### Using Docker (Recommended)
 
@@ -143,7 +143,7 @@ cp env.example .env
 python -m mcp_graylog.server
 ```
 
-## ⚙️ Configuration
+## Configuration
 
 The server can be configured using environment variables:
 
@@ -159,30 +159,30 @@ The server can be configured using environment variables:
 | `LOG_LEVEL` | Logging level | No | INFO |
 | `LOG_FORMAT` | Log format (json/text) | No | json |
 
-*Both username and password are required.
+*Both username and password are required.*
 
-## 📖 Usage
+## Usage
 
 ### Available Tools
 
 The MCP Graylog server provides the following tools:
 
-#### 🔍 Core Search Tools
+#### Core Search Tools
 - `search_logs`: Search logs using Elasticsearch query syntax
 - `search_stream_logs`: Search logs within a specific Graylog stream
 - `get_last_event_from_stream`: Get the most recent event from a specific stream
 
-#### 📊 Stream Management Tools
+#### Stream Management Tools
 - `list_streams`: List all available Graylog streams
 - `search_streams_by_name`: Search for streams by name or partial name
 - `get_stream_info`: Get detailed information about a specific stream
 
-#### 📈 Analysis Tools
+#### Analysis Tools
 - `get_log_statistics`: Get log statistics and aggregations
 - `get_error_logs`: Get error logs from the last specified time range
 - `get_log_count_by_level`: Get log count aggregated by log level
 
-#### 🛠️ System Tools
+#### System Tools
 - `get_system_info`: Get Graylog system information and status
 - `test_connection`: Test connection to Graylog server
 
@@ -241,7 +241,7 @@ The MCP Graylog server provides the following tools:
 }
 ```
 
-## ⚠️ Important Note on Request Format
+## Important Note on Request Format
 
 All API/tool requests that accept parameters (such as search_logs, search_stream_logs, get_log_statistics, etc.) must be provided as JSON objects, NOT as strings. Passing a string will result in an error.
 
@@ -258,7 +258,7 @@ All API/tool requests that accept parameters (such as search_logs, search_stream
 "{stream_id:5abb3f2f7bb9fd00011595fe, query: *, limit: 10}"
 ```
 
-## 🔧 Development
+## Development
 
 ### Available Commands
 
@@ -323,7 +323,7 @@ mypy .
 make check
 ```
 
-## 🤖 Cursor Integration
+## Cursor Integration
 
 ### Setting up MCP Graylog Server in Cursor
 
@@ -431,7 +431,7 @@ Search for timeout errors from web-server or api-server in the last 7 days
    "Get the Graylog system information and check if the connection is healthy"
    ```
 
-## 🚨 Troubleshooting
+## Troubleshooting
 
 ### Connection Issues
 - Verify Graylog endpoint is accessible
@@ -460,12 +460,12 @@ Search for timeout errors from web-server or api-server in the last 7 days
 - Verify the MCP server is running on the expected port
 - Use the test script: `python3 test_cursor_integration.py`
 
-## 📚 Additional Documentation
+## Additional Documentation
 
 - **[Complete Documentation](DOCUMENTATION.md)** - Comprehensive guide with detailed examples and advanced usage
 - **[Examples](examples/)** - Usage examples and test scripts
 
-## 🏗️ Project Structure
+## Project Structure
 
 ```
 mcp_graylog/
@@ -489,7 +489,7 @@ mcp_graylog/
 └── README.md             # This file
 ```
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature-name`
@@ -498,11 +498,11 @@ mcp_graylog/
 5. Format your code: `make format`
 6. Submit a pull request
 
-## 📄 License
+## License
 
 MIT License - see [LICENSE](LICENSE) file for details.
 
-## 🆘 Support
+## Support
 
 - **Issues**: Report bugs and feature requests on GitHub
 - **Documentation**: Check the [complete documentation](DOCUMENTATION.md)

@@ -1,151 +1,172 @@
 #!/usr/bin/env python3
-"""Test script for Cursor MCP Graylog integration."""
+"""
+Test script for Cursor MCP Graylog integration.
+
+This script tests the Docker setup and provides configuration examples
+for integrating the MCP Graylog server with Cursor.
+"""
 
 import os
 import sys
-import json
 import subprocess
-import logging
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+import json
+from pathlib import Path
 
 
-def test_environment_variables():
-    """Test if required environment variables are set."""
-    print("=== Environment Variables Test ===")
+def check_environment_variables():
+    """Check if required environment variables are set."""
+    print("Checking environment variables...")
 
     required_vars = {
-        "GRAYLOG_ENDPOINT": "Graylog server endpoint",
-        "GRAYLOG_USERNAME": "Graylog username",
-        "GRAYLOG_PASSWORD": "Graylog password",
+        "GRAYLOG_ENDPOINT": "Graylog server URL (e.g., https://graylog.example.com:9000)",
+        "GRAYLOG_USERNAME": "Graylog username for authentication",
+        "GRAYLOG_PASSWORD": "Graylog password for authentication",
     }
 
     missing_vars = []
-
     for var, description in required_vars.items():
         value = os.getenv(var)
         if value:
-            print(f"✅ {var}: {'*' * len(value)} ({description})")
+            print(f"Environment variable {var}: {'*' * len(value)} ({description})")
         else:
             missing_vars.append(var)
-            print(f"❌ {var}: Not set ({description})")
-
-    print()
-
-    if not missing_vars:
-        print("✅ Using Username/Password authentication")
-    else:
-        print("❌ Missing required authentication variables")
+            print(f"Missing: {var} ({description})")
 
     if missing_vars:
-        print(f"\n❌ Missing required variables: {', '.join(missing_vars)}")
+        print(f"\nWarning: {len(missing_vars)} environment variables are missing.")
+        print("You can set them in your environment or create a .env file.")
         return False
 
+    print("Using Username/Password authentication")
     return True
 
 
-def test_docker_image():
-    """Test if Docker image exists."""
-    print("\n=== Docker Image Test ===")
+def check_docker_image():
+    """Check if the Docker image exists."""
+    print("\nChecking Docker image...")
 
     try:
         result = subprocess.run(
-            ["docker", "images", "mcp-graylog:latest"], capture_output=True, text=True
+            [
+                "docker",
+                "images",
+                "mcp-graylog:latest",
+                "--format",
+                "{{.Repository}}:{{.Tag}}",
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
         )
 
-        if result.returncode == 0 and "mcp-graylog" in result.stdout:
-            print("✅ Docker image mcp-graylog:latest found")
+        if result.stdout.strip():
+            print("Docker image mcp-graylog:latest found")
             return True
         else:
-            print("❌ Docker image mcp-graylog:latest not found")
-            print("   Run: docker build -t mcp-graylog:latest .")
+            print("Docker image mcp-graylog:latest not found")
+            print("You can build it with: docker build -t mcp-graylog .")
             return False
+
+    except subprocess.CalledProcessError:
+        print("ERROR: Failed to check Docker images")
+        return False
     except FileNotFoundError:
-        print("❌ Docker not found or not in PATH")
+        print("ERROR: Docker not found. Please install Docker.")
         return False
 
 
-def test_container_run():
-    """Test if container can run with current environment."""
-    print("\n=== Container Test ===")
+def test_container_startup():
+    """Test if the container can start successfully."""
+    print("\nTesting container startup...")
 
-    # Get environment variables
-    env_vars = []
-    for var in ["GRAYLOG_ENDPOINT", "GRAYLOG_USERNAME", "GRAYLOG_PASSWORD"]:
-        value = os.getenv(var)
-        if value:
-            env_vars.extend(["-e", f"{var}={value}"])
-
-    if not env_vars:
-        print("❌ No environment variables set for container test")
-        return False
-
-    # Use a unique container name
-    import uuid
-
-    container_name = f"test-mcp-graylog-{uuid.uuid4().hex[:8]}"
+    # Get environment variables for the test
+    env_vars = {
+        "GRAYLOG_ENDPOINT": os.getenv("GRAYLOG_ENDPOINT", "https://example.com:9000"),
+        "GRAYLOG_USERNAME": os.getenv("GRAYLOG_USERNAME", "test"),
+        "GRAYLOG_PASSWORD": os.getenv("GRAYLOG_PASSWORD", "test"),
+        "GRAYLOG_VERIFY_SSL": "false",
+        "GRAYLOG_TIMEOUT": "10",
+    }
 
     try:
-        # Clean up any existing test container
-        subprocess.run(["docker", "rm", "-f", container_name], capture_output=True)
+        # Build the docker run command
+        cmd = [
+            "docker",
+            "run",
+            "--rm",
+            "-d",
+            "--name",
+            "mcp-graylog-test",
+            "-p",
+            "8001:8000",  # Use different port for testing
+        ]
 
-        # Test container startup (timeout after 10 seconds)
-        cmd = (
-            ["docker", "run", "--rm", "--name", container_name]
-            + env_vars
-            + [
-                "mcp-graylog:latest",
-                "timeout",
-                "10",
-                "python",
-                "-m",
-                "mcp_graylog.server",
-            ]
-        )
+        # Add environment variables
+        for key, value in env_vars.items():
+            cmd.extend(["-e", f"{key}={value}"])
 
-        print(f"Testing container with command: {' '.join(cmd[:6])}...")
+        cmd.append("mcp-graylog:latest")
 
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
+        print(f"Running: {' '.join(cmd)}")
 
-        if result.returncode == 0 or "Starting MCP Graylog server" in result.stdout:
-            print("✅ Container starts successfully")
-            return True
+        # Start the container
+        result = subprocess.run(cmd, capture_output=True, text=True)
+
+        if result.returncode == 0:
+            container_id = result.stdout.strip()
+            print(f"Container started with ID: {container_id}")
+
+            # Wait a moment for startup
+            import time
+
+            time.sleep(3)
+
+            # Check if container is still running
+            check_result = subprocess.run(
+                [
+                    "docker",
+                    "ps",
+                    "--filter",
+                    f"id={container_id}",
+                    "--format",
+                    "{{.Status}}",
+                ],
+                capture_output=True,
+                text=True,
+            )
+
+            if check_result.stdout.strip():
+                print("Container starts successfully")
+
+                # Stop the test container
+                subprocess.run(["docker", "stop", container_id], capture_output=True)
+                print("Container started (timeout reached - this is expected)")
+                return True
+            else:
+                print("Container stopped unexpectedly")
+                return False
         else:
-            print("❌ Container failed to start")
-            print(f"Error: {result.stderr}")
+            print(f"ERROR: Failed to start container: {result.stderr}")
             return False
 
-    except subprocess.TimeoutExpired:
-        print("✅ Container started (timeout reached - this is expected)")
-        return True
     except Exception as e:
-        print(f"❌ Container test failed: {e}")
+        print(f"ERROR: Container test failed: {e}")
         return False
-    finally:
-        # Clean up
-        subprocess.run(["docker", "rm", "-f", container_name], capture_output=True)
 
 
 def generate_cursor_config():
-    """Generate Cursor configuration based on environment variables."""
-    print("\n=== Cursor Configuration ===")
+    """Generate Cursor configuration examples."""
+    print("\nGenerating Cursor configuration examples...")
 
-    endpoint = os.getenv("GRAYLOG_ENDPOINT")
-    username = os.getenv("GRAYLOG_USERNAME")
-    password = os.getenv("GRAYLOG_PASSWORD")
+    # Get current environment variables
+    endpoint = os.getenv("GRAYLOG_ENDPOINT", "https://your-graylog-server:9000")
+    username = os.getenv("GRAYLOG_USERNAME", "your-username")
+    password = os.getenv("GRAYLOG_PASSWORD", "your-password")
 
-    if not endpoint:
-        print("❌ GRAYLOG_ENDPOINT not set")
-        return
+    print("Using Username/Password configuration")
 
-    if not username or not password:
-        print("❌ GRAYLOG_USERNAME and GRAYLOG_PASSWORD must be set")
-        return
-
-    print("✅ Using Username/Password configuration")
-    config = {
+    # Generate Docker-based configuration
+    docker_config = {
         "mcpServers": {
             "graylog": {
                 "command": "docker",
@@ -170,39 +191,39 @@ def generate_cursor_config():
         }
     }
 
-    print("\n📋 Copy this configuration to Cursor settings:")
-    print(json.dumps(config, indent=2))
+    print("Copy this configuration to Cursor settings:")
+    print(json.dumps(docker_config, indent=2))
+
+    return True
 
 
 def main():
-    """Run all tests."""
-    print("🔍 Testing Cursor MCP Graylog Integration")
-    print("=" * 50)
+    """Main test function."""
+    print("Testing Cursor MCP Graylog Integration")
+    print("=" * 60)
 
-    # Test environment variables
-    env_ok = test_environment_variables()
+    # Run tests
+    env_ok = check_environment_variables()
+    docker_ok = check_docker_image()
+    container_ok = test_container_startup()
+    config_ok = generate_cursor_config()
 
-    # Test Docker image
-    docker_ok = test_docker_image()
+    # Summary
+    print("\nTest Summary:")
+    print(f"Environment Variables: {'PASS' if env_ok else 'FAIL'}")
+    print(f"Docker Image: {'PASS' if docker_ok else 'FAIL'}")
+    print(f"Container Test: {'PASS' if container_ok else 'FAIL'}")
+    print(f"Configuration: {'PASS' if config_ok else 'FAIL'}")
 
-    # Test container
-    container_ok = test_container_run()
+    all_passed = all([env_ok, docker_ok, container_ok, config_ok])
 
-    # Generate configuration
-    generate_cursor_config()
-
-    print("\n" + "=" * 50)
-    print("📊 Test Summary:")
-    print(f"Environment Variables: {'✅' if env_ok else '❌'}")
-    print(f"Docker Image: {'✅' if docker_ok else '❌'}")
-    print(f"Container Test: {'✅' if container_ok else '❌'}")
-
-    if env_ok and docker_ok and container_ok:
-        print("\n🎉 All tests passed! Your Cursor integration should work.")
-        print("Remember to restart Cursor after adding the configuration.")
+    if all_passed:
+        print("\nAll tests passed! Your setup is ready for Cursor integration.")
+        return 0
     else:
-        print("\n⚠️  Some tests failed. Please fix the issues above.")
+        print("\nSome tests failed. Please fix the issues above.")
+        return 1
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

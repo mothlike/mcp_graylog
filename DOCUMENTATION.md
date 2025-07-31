@@ -6,11 +6,11 @@ The MCP Graylog Server provides a Model Context Protocol (MCP) interface to Gray
 
 ## Features
 
-- 🔍 **Log Search**: Search logs using Elasticsearch query syntax
-- 📊 **Stream Management**: List and search Graylog streams
-- 📈 **Analytics**: Get log statistics and aggregations
-- 🛠️ **System Info**: Retrieve Graylog system information
-- ✅ **Connection Testing**: Test connectivity to Graylog server
+- **Log Search**: Search logs using Elasticsearch query syntax
+- **Stream Management**: List and search Graylog streams
+- **Analytics**: Get log statistics and aggregations
+- **System Info**: Retrieve Graylog system information
+- **Connection Testing**: Test connectivity to Graylog server
 
 ## Installation
 
@@ -87,7 +87,7 @@ The MCP server now includes comprehensive request validation to ensure all reque
 #### `search_logs`
 Search logs using Elasticsearch query syntax.
 
-> ⚠️ **Request must be a JSON object, not a string.**
+> **Warning**: Request must be a JSON object, not a string.
 
 **Parameters:**
 - `query` (string, required): Search query (Elasticsearch syntax)
@@ -114,7 +114,7 @@ Search logs using Elasticsearch query syntax.
 #### `search_stream_logs`
 Search logs within a specific Graylog stream.
 
-> ⚠️ **Request must be a JSON object, not a string.**
+> **Warning**: Request must be a JSON object, not a string.
 
 **Parameters:**
 - `stream_id` (string, required): Stream ID to search in
@@ -139,7 +139,7 @@ Search logs within a specific Graylog stream.
 #### `get_log_statistics`
 Get log statistics and aggregations from Graylog.
 
-> ⚠️ **Request must be a JSON object, not a string.**
+> **Warning**: Request must be a JSON object, not a string.
 
 **Parameters:**
 - `query` (string, required): Search query
