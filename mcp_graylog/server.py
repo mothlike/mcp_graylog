@@ -35,7 +35,7 @@ class SearchLogsRequest(BaseModel):
 
     query: str = Field(..., description="Search query (Elasticsearch syntax)")
     time_range: Optional[str] = Field(
-        '1h',  # <-- Set default to 1h
+        "1h",  # <-- Set default to 1h
         description="Time range (e.g., '1h', '24h', '7d'). Defaults to '1h' if not specified.",
     )
     fields: Optional[List[str]] = Field(None, description="Fields to return")
@@ -90,7 +90,10 @@ class AggregationRequest(BaseModel):
     """Request model for log aggregations."""
 
     query: str = Field(..., description="Search query")
-    time_range: str = Field('1h', description="Time range (e.g., '1h', '24h', '7d'). Defaults to '1h' if not specified.")
+    time_range: str = Field(
+        "1h",
+        description="Time range (e.g., '1h', '24h', '7d'). Defaults to '1h' if not specified.",
+    )
     aggregation_type: str = Field(
         ..., description="Aggregation type (terms, date_histogram, etc.)"
     )
@@ -178,7 +181,7 @@ class StreamSearchRequest(BaseModel):
         description="Search query (e.g., '*' for all messages, 'level:ERROR' for errors)",
     )
     time_range: Optional[str] = Field(
-        '1h',
+        "1h",
         description="Time range (e.g., '1h', '24h', '7d'). Defaults to '1h' if not specified.",
     )
     fields: Optional[List[str]] = Field(
@@ -281,7 +284,7 @@ def search_logs(request: SearchLogsRequest) -> str:
     Search logs in Graylog using Elasticsearch query syntax.
 
     PURPOSE: Search and retrieve log messages from Graylog with flexible filtering and sorting options.
-    
+
     INPUT FORMAT: JSON object with the following structure:
     {
         "query": "level:ERROR AND source:nginx",  // REQUIRED: Elasticsearch query syntax
@@ -293,14 +296,14 @@ def search_logs(request: SearchLogsRequest) -> str:
         "sort_direction": "desc",                 // OPTIONAL: asc/desc
         "stream_id": "stream_123"                 // OPTIONAL: Filter by specific stream
     }
-    
+
     QUERY EXAMPLES:
     - "*" (all logs)
     - "level:ERROR" (error logs only)
     - "source:nginx AND level:ERROR" (nginx errors)
     - "message:*error*" (logs containing "error")
     - "timestamp:[2024-01-01 TO 2024-01-02]" (date range)
-    
+
     OUTPUT: JSON string with search results including messages, metadata, and pagination info.
     """
     # --- BEGIN PATCH ---
@@ -310,7 +313,12 @@ def search_logs(request: SearchLogsRequest) -> str:
             request_dict = json.loads(request)
             request = SearchLogsRequest(**request_dict)
         except Exception as e:
-            return json.dumps({"error": f"Request must be a JSON object or a JSON string that can be parsed into an object. Error: {str(e)}"}, indent=2)
+            return json.dumps(
+                {
+                    "error": f"Request must be a JSON object or a JSON string that can be parsed into an object. Error: {str(e)}"
+                },
+                indent=2,
+            )
     # --- END PATCH ---
     try:
         # Validate request
@@ -345,7 +353,7 @@ def get_log_statistics(request: AggregationRequest) -> str:
     Get log statistics and aggregations from Graylog.
 
     PURPOSE: Analyze log data using aggregations to get insights like top sources, error counts, time-based trends.
-    
+
     INPUT FORMAT: JSON object with the following structure:
     {
         "query": "*",                    // REQUIRED: Search query to filter logs
@@ -355,24 +363,26 @@ def get_log_statistics(request: AggregationRequest) -> str:
         "size": 10,                      // OPTIONAL: Number of buckets (1-100)
         "interval": "1h"                 // OPTIONAL: Time interval for date_histogram
     }
-    
+
     AGGREGATION TYPES:
     - "terms": Count occurrences by field values (e.g., top sources, levels)
     - "date_histogram": Time-based grouping (requires interval parameter)
     - "cardinality": Count unique values in a field
     - "stats": Statistical summary (min, max, avg, sum)
     - "min", "max", "avg", "sum": Single statistical value
-    
+
     FIELD EXAMPLES:
     - "source": Group by log source
     - "level": Group by log level
     - "timestamp": For time-based analysis
     - "message": For text analysis
-    
+
     OUTPUT: JSON string with aggregation results including buckets, counts, and statistics.
     """
     if isinstance(request, str):
-        return json.dumps({"error": "Request must be a JSON object, not a string."}, indent=2)
+        return json.dumps(
+            {"error": "Request must be a JSON object, not a string."}, indent=2
+        )
     try:
         # Validate request
         if not request.query:
@@ -408,9 +418,9 @@ def list_streams() -> str:
     List all available Graylog streams.
 
     PURPOSE: Get a complete list of all log streams configured in Graylog with their metadata.
-    
+
     INPUT: No parameters required.
-    
+
     OUTPUT: JSON string containing array of streams with:
     - id: Unique stream identifier
     - title: Human-readable stream name
@@ -435,10 +445,10 @@ def get_stream_info(stream_id: str) -> str:
     Get detailed information about a specific Graylog stream.
 
     PURPOSE: Retrieve comprehensive details about a single stream including configuration, rules, and status.
-    
-    INPUT: 
+
+    INPUT:
     - stream_id: REQUIRED - The unique identifier of the stream (e.g., "5abb3f2f7bb9fd00011595fe")
-    
+
     OUTPUT: JSON string containing detailed stream information including:
     - Basic info (id, title, description)
     - Configuration settings
@@ -467,7 +477,7 @@ def search_stream_logs(request: StreamSearchRequest) -> str:
     Search logs within a specific Graylog stream.
 
     PURPOSE: Search log messages that belong to a particular stream with filtering and pagination.
-    
+
     INPUT FORMAT: JSON object with the following structure:
     {
         "stream_id": "5abb3f2f7bb9fd00011595fe",  // REQUIRED: Stream identifier
@@ -476,17 +486,19 @@ def search_stream_logs(request: StreamSearchRequest) -> str:
         "fields": ["message", "level", "source"],   // OPTIONAL: Fields to return
         "limit": 50                                 // OPTIONAL: Max results (1-100, default: 50)
     }
-    
+
     QUERY EXAMPLES:
     - "*" (all logs in stream)
     - "level:ERROR" (errors in stream)
     - "source:application" (logs from specific source)
     - "message:*exception*" (logs containing "exception")
-    
+
     OUTPUT: JSON string with search results from the specified stream only.
     """
     if isinstance(request, str):
-        return json.dumps({"error": "Request must be a JSON object, not a string."}, indent=2)
+        return json.dumps(
+            {"error": "Request must be a JSON object, not a string."}, indent=2
+        )
     try:
         # Validate request
         if not request.stream_id or not request.stream_id.strip():
@@ -521,9 +533,9 @@ def get_system_info() -> str:
     Get Graylog system information and status.
 
     PURPOSE: Retrieve comprehensive system information about the Graylog instance including version, status, and configuration.
-    
+
     INPUT: No parameters required.
-    
+
     OUTPUT: JSON string containing system information including:
     - Graylog version and build info
     - System status and health
@@ -546,9 +558,9 @@ def test_connection() -> str:
     Test connection to Graylog server.
 
     PURPOSE: Verify connectivity and authentication to the Graylog server.
-    
+
     INPUT: No parameters required.
-    
+
     OUTPUT: JSON string indicating connection status:
     {
         "connected": true/false,
@@ -576,11 +588,11 @@ def get_error_logs(time_range: str = "1h", limit: int = 100) -> str:
     Get error logs from the last specified time range.
 
     PURPOSE: Quickly retrieve all error-level logs (ERROR, CRITICAL, FATAL) for troubleshooting and monitoring.
-    
+
     INPUT:
     - time_range: OPTIONAL - Time range to search (default: "1h", examples: "30m", "24h", "7d")
     - limit: OPTIONAL - Maximum number of results (1-1000, default: 100)
-    
+
     OUTPUT: JSON string containing error logs with fields:
     - message: Log message content
     - level: Log level (ERROR, CRITICAL, FATAL)
@@ -616,10 +628,10 @@ def get_log_count_by_level(time_range: str = "1h") -> str:
     Get log count aggregated by log level.
 
     PURPOSE: Analyze log volume by severity level to understand system health and log distribution.
-    
+
     INPUT:
     - time_range: OPTIONAL - Time range to analyze (default: "1h", examples: "30m", "24h", "7d")
-    
+
     OUTPUT: JSON string containing log counts by level:
     {
         "aggregation": {
@@ -653,10 +665,10 @@ def search_streams_by_name(stream_name: str) -> str:
     Search for Graylog streams by name or partial name.
 
     PURPOSE: Find streams by searching their titles, useful when you know part of the stream name but not the exact ID.
-    
+
     INPUT:
     - stream_name: REQUIRED - Partial or full stream name to search for (e.g., '1c_eventlog', 'nginx', 'api')
-    
+
     OUTPUT: JSON string containing matching streams:
     {
         "search_term": "nginx",
@@ -670,7 +682,7 @@ def search_streams_by_name(stream_name: str) -> str:
         ],
         "total_matches": 1
     }
-    
+
     SEARCH BEHAVIOR: Case-insensitive partial matching on stream titles.
     """
     try:
@@ -718,11 +730,11 @@ def get_last_event_from_stream(stream_id: str, time_range: str = "1h") -> str:
     Get the last event from a specific Graylog stream.
 
     PURPOSE: Retrieve the most recent log message from a specific stream, useful for monitoring and checking if a stream is active.
-    
+
     INPUT:
     - stream_id: REQUIRED - The ID of the stream to get the last event from (e.g., "5abb3f2f7bb9fd00011595fe")
     - time_range: OPTIONAL - Time range to search in (default: "1h", examples: "30m", "24h", "7d")
-    
+
     OUTPUT: JSON string containing the last event from the specified stream:
     {
         "messages": [
@@ -735,7 +747,7 @@ def get_last_event_from_stream(stream_id: str, time_range: str = "1h") -> str:
         ],
         "total_results": 1
     }
-    
+
     USAGE: Use this to check if a stream is receiving logs or to get the latest activity.
     """
     try:

@@ -27,7 +27,9 @@ class QueryParams(BaseModel):
 
     query: str = Field(..., description="Search query")
     time_range: Optional[str] = Field(
-        '1h', description="Time range (e.g., '1h', '24h', '7d'). Defaults to '1h' if not specified.")
+        "1h",
+        description="Time range (e.g., '1h', '24h', '7d'). Defaults to '1h' if not specified.",
+    )
     fields: Optional[List[str]] = Field(None, description="Fields to return")
     limit: int = Field(50, description="Maximum number of results")
     offset: int = Field(0, description="Result offset")
@@ -151,7 +153,7 @@ class GraylogClient:
         Search logs using Graylog API.
 
         PURPOSE: Execute log search queries against Graylog with flexible filtering, sorting, and pagination options.
-        
+
         INPUT FORMAT: QueryParams object with the following structure:
         {
             "query": "level:ERROR AND source:nginx",  // REQUIRED: Elasticsearch query syntax
@@ -166,9 +168,9 @@ class GraylogClient:
             "filter": "additional_filter",            // OPTIONAL: Additional filter query
             "highlight": false                        // OPTIONAL: Enable result highlighting
         }
-        
+
         GRAYLOG API ENDPOINT: /api/search/universal/relative (GET)
-        
+
         OUTPUT: Dictionary containing search results with:
         - messages: Array of log messages with content and metadata
         - total_results: Total number of matching logs
@@ -229,7 +231,7 @@ class GraylogClient:
         Get log statistics and aggregations.
 
         PURPOSE: Analyze log data using various aggregation types to extract insights like top sources, error counts, time-based trends, and statistical summaries.
-        
+
         INPUT FORMAT:
         - query: REQUIRED - Search query to filter logs before aggregation
         - time_range: REQUIRED - Time range for analysis (e.g., "1h", "24h", "7d")
@@ -240,16 +242,16 @@ class GraylogClient:
             "size": 10,                // OPTIONAL: Number of buckets (default: 10)
             "interval": "1h"           // OPTIONAL: Time interval for date_histogram
           }
-        
+
         AGGREGATION TYPES SUPPORTED:
         - "terms": Count occurrences by field values (e.g., top sources, levels)
         - "date_histogram": Time-based grouping (requires interval parameter)
         - "cardinality": Count unique values in a field
         - "stats": Statistical summary (min, max, avg, sum)
         - "min", "max", "avg", "sum": Single statistical value
-        
+
         GRAYLOG API ENDPOINT: /api/search/universal/relative/{aggregation_type} (POST)
-        
+
         OUTPUT: Dictionary containing aggregation results with:
         - aggregation: Aggregation results with buckets and counts
         - query: The executed query string
@@ -292,11 +294,11 @@ class GraylogClient:
         List all available streams.
 
         PURPOSE: Retrieve a complete list of all log streams configured in Graylog with their metadata and configuration details.
-        
+
         INPUT: No parameters required.
-        
+
         GRAYLOG API ENDPOINT: /api/streams (GET)
-        
+
         OUTPUT: List of dictionaries containing stream information:
         [
             {
@@ -321,12 +323,12 @@ class GraylogClient:
         Get detailed information about a stream.
 
         PURPOSE: Retrieve comprehensive details about a single stream including configuration, rules, outputs, and status information.
-        
+
         INPUT:
         - stream_id: REQUIRED - The unique identifier of the stream (e.g., "5abb3f2f7bb9fd00011595fe")
-        
+
         GRAYLOG API ENDPOINT: /api/streams/{stream_id} (GET)
-        
+
         OUTPUT: Dictionary containing detailed stream information:
         {
             "id": "stream_id_123",
@@ -352,19 +354,19 @@ class GraylogClient:
         Search logs within a specific stream.
 
         PURPOSE: Execute log search queries that are restricted to a specific stream, useful for analyzing logs from particular applications or services.
-        
+
         INPUT FORMAT:
         - stream_id: REQUIRED - The ID of the stream to search in (e.g., "5abb3f2f7bb9fd00011595fe")
         - params: QueryParams object with search parameters (same as search_logs)
-        
+
         BEHAVIOR:
         - Automatically filters results to the specified stream
         - Uses the same search capabilities as search_logs but scoped to one stream
         - If query is empty, defaults to "*" (all logs in stream)
         - Limits results to maximum of 100 logs per request
-        
+
         GRAYLOG API ENDPOINT: /api/search/universal/relative (GET) with stream filter
-        
+
         OUTPUT: Dictionary containing search results from the specified stream:
         {
             "messages": [...],
@@ -399,11 +401,11 @@ class GraylogClient:
         Get Graylog system information.
 
         PURPOSE: Retrieve comprehensive system information about the Graylog instance including version, status, configuration, and resource usage.
-        
+
         INPUT: No parameters required.
-        
+
         GRAYLOG API ENDPOINT: /api/system (GET)
-        
+
         OUTPUT: Dictionary containing system information:
         {
             "version": "5.2.0",
@@ -429,18 +431,18 @@ class GraylogClient:
         Test connection to Graylog server.
 
         PURPOSE: Verify connectivity and authentication to the Graylog server, useful for health checks and troubleshooting.
-        
+
         INPUT: No parameters required.
-        
+
         TEST PROCESS:
         1. Tests basic connectivity to the Graylog server
         2. Verifies authentication credentials
         3. Attempts to access system information endpoint
-        
+
         OUTPUT: Boolean indicating connection status:
         - True: Successfully connected and authenticated
         - False: Connection failed (network, authentication, or server issues)
-        
+
         ERROR HANDLING:
         - 401 errors: Authentication failure (check username/password)
         - Connection errors: Network connectivity issues
