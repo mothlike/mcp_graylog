@@ -1,0 +1,6 @@
+---
+alwaysApply: true
+rules:
+  - Always use doible quotes for strings.
+  - Use Black formatter code style.
+---
