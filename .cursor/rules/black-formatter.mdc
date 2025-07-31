@@ -1,6 +1,6 @@
 ---
 alwaysApply: true
 rules:
-  - Always use doible quotes for strings.
+  - Always use double quotes for strings.
   - Use Black formatter code style.
 ---
