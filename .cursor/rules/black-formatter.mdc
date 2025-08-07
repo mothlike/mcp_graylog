@@ -2,5 +2,5 @@
 alwaysApply: true
 rules:
   - Always use double quotes for strings.
-  - Use Black formatter code style.
+  - Use Black formatter code style for python code.
 ---
