@@ -1,26 +1,27 @@
-#!/bin/bash
-# Example setup script for MCP Graylog Server
-# Copy this file and modify with your actual credentials
+#!/bin/sh
+# Token-first setup example for MCP Graylog.
 
-echo "Setting up environment variables for MCP Graylog Server..."
+set -eu
 
-# Graylog server configuration
-export GRAYLOG_ENDPOINT="https://your-graylog-server.com"
+export GRAYLOG_ENDPOINT="${GRAYLOG_ENDPOINT:-https://your-graylog-server:9000}"
+export GRAYLOG_TOKEN="${GRAYLOG_TOKEN:-gl2-your-token}"
+export GRAYLOG_VERIFY_SSL="${GRAYLOG_VERIFY_SSL:-true}"
+export GRAYLOG_TIMEOUT="${GRAYLOG_TIMEOUT:-30}"
 
-# Authentication
-export GRAYLOG_USERNAME="your_username"
-export GRAYLOG_PASSWORD="your_password"
+export MCP_SERVER_TRANSPORT="${MCP_SERVER_TRANSPORT:-stdio}"
+export MCP_SERVER_HOST="${MCP_SERVER_HOST:-127.0.0.1}"
+export MCP_SERVER_PORT="${MCP_SERVER_PORT:-8000}"
+export MCP_SERVER_PATH="${MCP_SERVER_PATH:-/mcp}"
+export LOG_LEVEL="${LOG_LEVEL:-INFO}"
 
-# Server configuration
-export MCP_SERVER_HOST="0.0.0.0"
-export MCP_SERVER_PORT="8001"
-export LOG_LEVEL="INFO"
+printf '%s\n' "MCP Graylog environment:"
+printf '  GRAYLOG_ENDPOINT=%s\n' "$GRAYLOG_ENDPOINT"
+printf '  GRAYLOG_TOKEN=%s\n' '[set]'
+printf '  MCP_SERVER_TRANSPORT=%s\n' "$MCP_SERVER_TRANSPORT"
 
-echo "Environment variables set:"
-echo "  GRAYLOG_ENDPOINT: $GRAYLOG_ENDPOINT"
-echo "  GRAYLOG_USERNAME: $GRAYLOG_USERNAME"
-echo "  MCP_SERVER_PORT: $MCP_SERVER_PORT"
+printf '\n%s\n' "Codex stdio command:"
+printf '  uv run mcp-graylog\n'
 
-echo ""
-echo "To start the server, run:"
-echo "  python run_server.py" 
+printf '\n%s\n' "Streamable HTTP command:"
+printf '  uv run mcp-graylog --transport streamable-http --host %s --port %s --path %s\n' \
+  "$MCP_SERVER_HOST" "$MCP_SERVER_PORT" "$MCP_SERVER_PATH"

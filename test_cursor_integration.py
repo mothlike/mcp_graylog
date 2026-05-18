@@ -1,229 +1,105 @@
 #!/usr/bin/env python3
-"""
-Test script for Cursor MCP Graylog integration.
+"""Generate current MCP Graylog client configuration examples."""
 
-This script tests the Docker setup and provides configuration examples
-for integrating the MCP Graylog server with Cursor.
-"""
-
-import os
-import sys
-import subprocess
 import json
-from pathlib import Path
+from typing import Any
 
 
-def check_environment_variables():
-    """Check if required environment variables are set."""
-    print("Checking environment variables...")
-
-    required_vars = {
-        "GRAYLOG_ENDPOINT": "Graylog server URL (e.g., https://graylog.example.com:9000)",
-        "GRAYLOG_USERNAME": "Graylog username for authentication",
-        "GRAYLOG_PASSWORD": "Graylog password for authentication",
+def stdio_env() -> dict[str, str]:
+    return {
+        "GRAYLOG_ENDPOINT": "https://graylog.example.com",
+        "GRAYLOG_TOKEN": "gl2-your-token",
+        "MCP_SERVER_TRANSPORT": "stdio",
     }
 
-    missing_vars = []
-    for var, description in required_vars.items():
-        value = os.getenv(var)
-        if value:
-            print(f"Environment variable {var}: {'*' * len(value)} ({description})")
-        else:
-            missing_vars.append(var)
-            print(f"Missing: {var} ({description})")
 
-    if missing_vars:
-        print(f"\nWarning: {len(missing_vars)} environment variables are missing.")
-        print("You can set them in your environment or create a .env file.")
-        return False
-
-    print("Using Username/Password authentication")
-    return True
-
-
-def check_docker_image():
-    """Check if the Docker image exists."""
-    print("\nChecking Docker image...")
-
-    try:
-        result = subprocess.run(
-            [
-                "docker",
-                "images",
-                "mcp-graylog:latest",
-                "--format",
-                "{{.Repository}}:{{.Tag}}",
-            ],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-
-        if result.stdout.strip():
-            print("Docker image mcp-graylog:latest found")
-            return True
-        else:
-            print("Docker image mcp-graylog:latest not found")
-            print("You can build it with: docker build -t mcp-graylog .")
-            return False
-
-    except subprocess.CalledProcessError:
-        print("ERROR: Failed to check Docker images")
-        return False
-    except FileNotFoundError:
-        print("ERROR: Docker not found. Please install Docker.")
-        return False
-
-
-def test_container_startup():
-    """Test if the container can start successfully."""
-    print("\nTesting container startup...")
-
-    # Get environment variables for the test
-    env_vars = {
-        "GRAYLOG_ENDPOINT": os.getenv("GRAYLOG_ENDPOINT", "https://example.com:9000"),
-        "GRAYLOG_USERNAME": os.getenv("GRAYLOG_USERNAME", "test"),
-        "GRAYLOG_PASSWORD": os.getenv("GRAYLOG_PASSWORD", "test"),
-        "GRAYLOG_VERIFY_SSL": "false",
-        "GRAYLOG_TIMEOUT": "10",
+def stdio_server_config(*, include_type: bool = False) -> dict[str, Any]:
+    config: dict[str, Any] = {
+        "command": "uv",
+        "args": ["run", "mcp-graylog"],
+        "env": stdio_env(),
     }
-
-    try:
-        # Build the docker run command
-        cmd = [
-            "docker",
-            "run",
-            "--rm",
-            "-d",
-            "--name",
-            "mcp-graylog-test",
-            "-p",
-            "8001:8000",  # Use different port for testing
-        ]
-
-        # Add environment variables
-        for key, value in env_vars.items():
-            cmd.extend(["-e", f"{key}={value}"])
-
-        cmd.append("mcp-graylog:latest")
-
-        print(f"Running: {' '.join(cmd)}")
-
-        # Start the container
-        result = subprocess.run(cmd, capture_output=True, text=True)
-
-        if result.returncode == 0:
-            container_id = result.stdout.strip()
-            print(f"Container started with ID: {container_id}")
-
-            # Wait a moment for startup
-            import time
-
-            time.sleep(3)
-
-            # Check if container is still running
-            check_result = subprocess.run(
-                [
-                    "docker",
-                    "ps",
-                    "--filter",
-                    f"id={container_id}",
-                    "--format",
-                    "{{.Status}}",
-                ],
-                capture_output=True,
-                text=True,
-            )
-
-            if check_result.stdout.strip():
-                print("Container starts successfully")
-
-                # Stop the test container
-                subprocess.run(["docker", "stop", container_id], capture_output=True)
-                print("Container started (timeout reached - this is expected)")
-                return True
-            else:
-                print("Container stopped unexpectedly")
-                return False
-        else:
-            print(f"ERROR: Failed to start container: {result.stderr}")
-            return False
-
-    except Exception as e:
-        print(f"ERROR: Container test failed: {e}")
-        return False
+    if include_type:
+        config = {"type": "stdio", **config}
+    return config
 
 
-def generate_cursor_config():
-    """Generate Cursor configuration examples."""
-    print("\nGenerating Cursor configuration examples...")
-
-    # Get current environment variables
-    endpoint = os.getenv("GRAYLOG_ENDPOINT", "https://your-graylog-server:9000")
-    username = os.getenv("GRAYLOG_USERNAME", "your-username")
-    password = os.getenv("GRAYLOG_PASSWORD", "your-password")
-
-    print("Using Username/Password configuration")
-
-    # Generate Docker-based configuration
-    docker_config = {
-        "mcpServers": {
-            "graylog": {
-                "command": "docker",
-                "args": [
-                    "run",
-                    "--rm",
-                    "-i",
-                    "-e",
-                    f"GRAYLOG_ENDPOINT={endpoint}",
-                    "-e",
-                    f"GRAYLOG_USERNAME={username}",
-                    "-e",
-                    f"GRAYLOG_PASSWORD={password}",
-                    "-e",
-                    "GRAYLOG_VERIFY_SSL=true",
-                    "-e",
-                    "GRAYLOG_TIMEOUT=30",
-                    "mcp-graylog:latest",
-                ],
-                "env": {},
-            }
+def codex_stdio_config() -> dict[str, Any]:
+    return {
+        "mcp_servers": {
+            "graylog": stdio_server_config()
         }
     }
 
-    print("Copy this configuration to Cursor settings:")
-    print(json.dumps(docker_config, indent=2))
 
-    return True
+def claude_code_config() -> dict[str, Any]:
+    return {"mcpServers": {"graylog": stdio_server_config(include_type=True)}}
 
 
-def main():
-    """Main test function."""
-    print("Testing Cursor MCP Graylog Integration")
-    print("=" * 60)
+def cursor_config() -> dict[str, Any]:
+    return {"mcpServers": {"graylog": stdio_server_config(include_type=True)}}
 
-    # Run tests
-    env_ok = check_environment_variables()
-    docker_ok = check_docker_image()
-    container_ok = test_container_startup()
-    config_ok = generate_cursor_config()
 
-    # Summary
-    print("\nTest Summary:")
-    print(f"Environment Variables: {'PASS' if env_ok else 'FAIL'}")
-    print(f"Docker Image: {'PASS' if docker_ok else 'FAIL'}")
-    print(f"Container Test: {'PASS' if container_ok else 'FAIL'}")
-    print(f"Configuration: {'PASS' if config_ok else 'FAIL'}")
+def opencode_config() -> dict[str, Any]:
+    return {
+        "$schema": "https://opencode.ai/config.json",
+        "mcp": {
+            "graylog": {
+                "type": "local",
+                "command": ["uv", "run", "mcp-graylog"],
+                "environment": stdio_env(),
+                "enabled": True,
+            }
+        },
+    }
 
-    all_passed = all([env_ok, docker_ok, container_ok, config_ok])
 
-    if all_passed:
-        print("\nAll tests passed! Your setup is ready for Cursor integration.")
-        return 0
-    else:
-        print("\nSome tests failed. Please fix the issues above.")
-        return 1
+def hermes_config() -> dict[str, Any]:
+    return {"mcp_servers": {"graylog": stdio_server_config()}}
+
+
+def openclaw_config() -> dict[str, Any]:
+    return {"mcp": {"servers": {"graylog": stdio_server_config()}}}
+
+
+def streamable_http_config() -> dict[str, Any]:
+    return {
+        "command": "uv",
+        "args": [
+            "run",
+            "mcp-graylog",
+            "--transport",
+            "streamable-http",
+            "--host",
+            "0.0.0.0",
+            "--port",
+            "8000",
+            "--path",
+            "/mcp",
+        ],
+        "env": {
+            "GRAYLOG_ENDPOINT": "https://graylog.example.com",
+            "GRAYLOG_TOKEN": "gl2-your-token",
+        },
+    }
+
+
+def main() -> int:
+    examples = {
+        "Codex stdio config": codex_stdio_config(),
+        "Claude Code config": claude_code_config(),
+        "Cursor config": cursor_config(),
+        "OpenCode config": opencode_config(),
+        "Hermes config": hermes_config(),
+        "OpenClaw config": openclaw_config(),
+        "Streamable HTTP config": streamable_http_config(),
+    }
+    for title, config in examples.items():
+        print(f"{title}:")
+        print(json.dumps(config, indent=2))
+        print()
+    return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    raise SystemExit(main())
