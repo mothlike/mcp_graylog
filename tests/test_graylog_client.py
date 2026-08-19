@@ -94,6 +94,21 @@ def test_auth_secret_values_are_redacted_in_error_message() -> None:
     assert make_settings().auth_headers()["Authorization"] not in message
 
 
+def test_write_requests_include_csrf_header_graylog_requires() -> None:
+    captured: dict[str, str] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured["x_requested_by"] = request.headers.get("X-Requested-By", "")
+        return httpx.Response(200, json={"datarows": []})
+
+    client = make_client(handler)
+    client.aggregate(make_aggregation("*", "level"))
+
+    # Graylog rejects unsafe methods without this header: 400 "CSRF protection
+    # header is missing. Please add a 'X-Requested-By' header to your request."
+    assert captured["x_requested_by"] != ""
+
+
 def test_list_streams_handles_missing_streams_as_empty_list() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         assert request.url.path == "/api/streams"
