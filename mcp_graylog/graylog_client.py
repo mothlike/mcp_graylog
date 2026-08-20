@@ -41,6 +41,8 @@ class GraylogClient:
             headers={
                 "Accept": "application/json",
                 "Content-Type": "application/json",
+                # Graylog answers 400 "CSRF protection header is missing"
+                # to any unsafe method sent without this header.
                 "X-Requested-By": "mcp-graylog",
                 **settings.auth_headers(),
             },

@@ -39,6 +39,7 @@ def test_search_messages_uses_current_graylog_endpoint_and_query_payload() -> No
     def handler(request: httpx.Request) -> httpx.Response:
         captured["method"] = request.method
         captured["path"] = request.url.path
+        captured["csrf_header"] = request.headers.get("X-Requested-By", "")
         captured["body"] = request.read().decode()
         return httpx.Response(200, json={"messages": [], "total_results": 0})
 
@@ -49,6 +50,7 @@ def test_search_messages_uses_current_graylog_endpoint_and_query_payload() -> No
     assert result["total_results"] == 0
     assert captured["method"] == "POST"
     assert captured["path"] == "/api/search/messages"
+    assert captured["csrf_header"] == "mcp-graylog"
     body = json.loads(captured["body"])
     assert body["query"] == "level:ERROR"
     assert "query_string" not in body
@@ -60,6 +62,7 @@ def test_aggregate_uses_current_graylog_endpoint() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         captured["method"] = request.method
         captured["path"] = request.url.path
+        captured["csrf_header"] = request.headers.get("X-Requested-By", "")
         return httpx.Response(200, json={"datarows": []})
 
     client = make_client(handler)
@@ -69,6 +72,7 @@ def test_aggregate_uses_current_graylog_endpoint() -> None:
     assert result == {"datarows": []}
     assert captured["method"] == "POST"
     assert captured["path"] == "/api/search/aggregate"
+    assert captured["csrf_header"] == "mcp-graylog"
 
 
 def test_auth_secret_values_are_redacted_in_error_message() -> None:
@@ -94,19 +98,16 @@ def test_auth_secret_values_are_redacted_in_error_message() -> None:
     assert make_settings().auth_headers()["Authorization"] not in message
 
 
-def test_write_requests_include_csrf_header_graylog_requires() -> None:
-    captured: dict[str, str] = {}
-
+def test_get_requests_include_csrf_header() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
-        captured["x_requested_by"] = request.headers.get("X-Requested-By", "")
-        return httpx.Response(200, json={"datarows": []})
+        assert request.method == "GET"
+        assert request.url.path == "/api/system"
+        assert request.headers["X-Requested-By"] == "mcp-graylog"
+        return httpx.Response(200, json={"version": "6.0.0"})
 
     client = make_client(handler)
-    client.aggregate(make_aggregation("*", "level"))
 
-    # Graylog rejects unsafe methods without this header: 400 "CSRF protection
-    # header is missing. Please add a 'X-Requested-By' header to your request."
-    assert captured["x_requested_by"] != ""
+    assert client.get_system_info() == {"version": "6.0.0"}
 
 
 def test_list_streams_handles_missing_streams_as_empty_list() -> None:
