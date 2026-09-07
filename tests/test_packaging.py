@@ -9,7 +9,7 @@ def test_pyproject_uses_official_mcp_sdk_and_httpx():
     data = tomllib.loads((ROOT / "pyproject.toml").read_text())
     dependencies = data["project"]["dependencies"]
 
-    assert "mcp[cli]>=1.13.0,<2" in dependencies
+    assert "mcp[cli]>=2.1,<3" in dependencies
     assert "httpx>=0.27.0" in dependencies
     assert all(not dep.startswith("fastmcp") for dep in dependencies)
     assert all(not dep.startswith("requests") for dep in dependencies)

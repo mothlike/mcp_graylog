@@ -3,6 +3,8 @@
 MCP Graylog is a Model Context Protocol server for querying Graylog 6+ from AI
 assistants. The default transport is Codex stdio. Streamable HTTP is available
 only when you explicitly opt in for a remote, shared, or containerized runtime.
+The server uses MCP Python SDK 2.x and supports its current and legacy protocol
+revisions.
 
 ## Install Dependencies
 

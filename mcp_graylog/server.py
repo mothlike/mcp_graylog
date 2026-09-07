@@ -3,9 +3,10 @@
 from dataclasses import dataclass
 from typing import Annotated, Any, Literal, Protocol
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server import MCPServer
 from pydantic import Field
 
+from . import __version__
 from .models import AggregateLogsInput, MessageSearchInput, RelativeTimeRange
 
 LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
@@ -121,8 +122,8 @@ def create_tool_handlers(graylog: GraylogToolClient) -> ToolHandlers:
 
 def create_mcp_server(
     graylog: GraylogToolClient, log_level: LogLevel = "INFO"
-) -> FastMCP:
-    mcp = FastMCP("graylog", log_level=log_level)
+) -> MCPServer:
+    mcp = MCPServer("graylog", version=__version__, log_level=log_level)
     handlers = create_tool_handlers(graylog)
 
     mcp.tool()(handlers.search_logs)

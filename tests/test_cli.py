@@ -10,9 +10,6 @@ from mcp_graylog.cli import Transport
 
 class FakeMcpSettings:
     def __init__(self) -> None:
-        self.host: str | None = None
-        self.port: int | None = None
-        self.streamable_http_path: str | None = None
         self.log_level: str | None = None
 
 
@@ -21,12 +18,8 @@ class FakeMcpServer:
         self.settings = FakeMcpSettings()
         self.run_calls: list[dict[str, Any]] = []
 
-    def run(
-        self, transport: Transport = "stdio", mount_path: str | None = None
-    ) -> None:
-        call: dict[str, Any] = {"transport": transport}
-        if mount_path is not None:
-            call["mount_path"] = mount_path
+    def run(self, transport: Transport = "stdio", **kwargs: object) -> None:
+        call: dict[str, Any] = {"transport": transport, **kwargs}
         self.run_calls.append(call)
 
 
@@ -116,9 +109,6 @@ def test_main_defaults_to_stdio_without_http_settings(monkeypatch: Any) -> None:
     cli.main([])
 
     assert fake_mcp.run_calls == [{"transport": "stdio"}]
-    assert fake_mcp.settings.host is None
-    assert fake_mcp.settings.port is None
-    assert fake_mcp.settings.streamable_http_path is None
     assert fake_mcp.settings.log_level == "INFO"
     assert len(FakeGraylogClient.instances) == 1
     assert FakeGraylogClient.instances[0].settings is fake_settings
@@ -155,10 +145,14 @@ def test_main_configures_streamable_http_transport(monkeypatch: Any) -> None:
         ]
     )
 
-    assert fake_mcp.run_calls == [{"transport": "streamable-http"}]
-    assert fake_mcp.settings.host == "0.0.0.0"
-    assert fake_mcp.settings.port == 9000
-    assert fake_mcp.settings.streamable_http_path == "/graylog"
+    assert fake_mcp.run_calls == [
+        {
+            "transport": "streamable-http",
+            "host": "0.0.0.0",
+            "port": 9000,
+            "streamable_http_path": "/graylog",
+        }
+    ]
     assert fake_mcp.settings.log_level == "DEBUG"
     assert len(FakeGraylogClient.instances) == 1
     assert FakeGraylogClient.instances[0].closed is True

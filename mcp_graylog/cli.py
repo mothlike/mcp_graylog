@@ -57,8 +57,11 @@ def main(argv: Sequence[str] | None = None) -> None:
         mcp = create_mcp_server(graylog, log_level=log_level)
 
         if transport == "streamable-http":
-            mcp.settings.host = args.host
-            mcp.settings.port = args.port
-            mcp.settings.streamable_http_path = args.path
-
-        mcp.run(transport=transport)
+            mcp.run(
+                transport="streamable-http",
+                host=args.host,
+                port=args.port,
+                streamable_http_path=args.path,
+            )
+        else:
+            mcp.run(transport="stdio")

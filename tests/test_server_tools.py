@@ -1,7 +1,8 @@
 from typing import Any
 
 import pytest
-from mcp.server.fastmcp import FastMCP
+from mcp import Client
+from mcp.server import MCPServer
 
 from mcp_graylog.models import AggregateLogsInput, MessageSearchInput, RelativeTimeRange
 from mcp_graylog.server import create_mcp_server, create_tool_handlers
@@ -170,17 +171,18 @@ def test_hours_must_be_at_least_one() -> None:
         handlers.get_log_count_by_level(hours=0)
 
 
-def test_create_mcp_server_returns_fastmcp_without_settings_env() -> None:
+def test_create_mcp_server_returns_current_mcp_server() -> None:
     server = create_mcp_server(FakeGraylogClient())
 
-    assert isinstance(server, FastMCP)
+    assert isinstance(server, MCPServer)
+    assert server.version == "0.3.0"
 
 
 @pytest.mark.asyncio
 async def test_tool_schemas_expose_validation_constraints() -> None:
     server = create_mcp_server(FakeGraylogClient())
 
-    tools = {tool.name: tool.inputSchema for tool in await server.list_tools()}
+    tools = {tool.name: tool.input_schema for tool in await server.list_tools()}
 
     stream_name = tools["search_streams_by_name"]["properties"]["stream_name"]
     error_hours = tools["get_error_logs"]["properties"]["hours"]
@@ -192,3 +194,16 @@ async def test_tool_schemas_expose_validation_constraints() -> None:
     assert error_limit["minimum"] == 1
     assert error_limit["maximum"] == 1000
     assert count_hours["minimum"] == 1
+
+
+@pytest.mark.asyncio
+async def test_mcp_v2_client_can_discover_and_call_tools() -> None:
+    server = create_mcp_server(FakeGraylogClient())
+
+    async with Client(server) as client:
+        tools = await client.list_tools()
+        result = await client.call_tool("get_system_info", {})
+
+    assert "get_system_info" in {tool.name for tool in tools.tools}
+    assert result.is_error is False
+    assert result.structured_content == {"version": "6.3.0"}
