@@ -41,6 +41,7 @@ class GraylogClient:
             headers={
                 "Accept": "application/json",
                 "Content-Type": "application/json",
+                "X-Requested-By": "mcp-graylog",
                 **settings.auth_headers(),
             },
             verify=settings.verify_ssl,

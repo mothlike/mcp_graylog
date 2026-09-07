@@ -54,6 +54,39 @@ def test_search_messages_uses_current_graylog_endpoint_and_query_payload() -> No
     assert "query_string" not in body
 
 
+@pytest.mark.parametrize(
+    ("request_fn", "expected_path"),
+    [
+        (
+            lambda client: client.search_messages(make_search("*")),
+            "/api/search/messages",
+        ),
+        (
+            lambda client: client.aggregate(make_aggregation("*", "level")),
+            "/api/search/aggregate",
+        ),
+    ],
+)
+def test_non_get_requests_include_graylog_csrf_header(
+    request_fn: Callable[[GraylogClient], dict[str, object]],
+    expected_path: str,
+) -> None:
+    captured: dict[str, str] = {}
+
+    def handler(http_request: httpx.Request) -> httpx.Response:
+        captured["path"] = http_request.url.path
+        captured["x_requested_by"] = http_request.headers["X-Requested-By"]
+        return httpx.Response(200, json={})
+
+    client = make_client(handler)
+    request_fn(client)
+
+    assert captured == {
+        "path": expected_path,
+        "x_requested_by": "mcp-graylog",
+    }
+
+
 def test_aggregate_uses_current_graylog_endpoint() -> None:
     captured: dict[str, str] = {}
 

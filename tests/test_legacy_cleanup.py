@@ -21,7 +21,7 @@ def test_start_sh_execs_packaged_cli_without_legacy_runner_or_stdio_noise():
 def test_init_exports_current_version_only():
     init_py = (ROOT / "mcp_graylog" / "__init__.py").read_text()
 
-    assert '__version__ = "0.2.0"' in init_py
+    assert '__version__ = "0.2.1"' in init_py
     assert "GraylogClient" not in init_py
     assert "__author__" not in init_py
     assert "__email__" not in init_py
