@@ -33,7 +33,7 @@ def test_token_auth_headers_are_basic_and_safe_summary_masks_secret():
         _env_file=None,
     )
 
-    assert _decode_basic_auth(settings.auth_headers()) == "token-value:token-value"
+    assert _decode_basic_auth(settings.auth_headers()) == "token-value:token"
     assert settings.safe_summary()["auth"] == "token"
     assert "token-value" not in repr(settings.safe_summary())
 

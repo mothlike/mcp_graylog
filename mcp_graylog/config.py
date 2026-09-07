@@ -54,7 +54,9 @@ class GraylogSettings(BaseSettings):
 
     def auth_headers(self) -> dict[str, str]:
         if secret := self._token_value():
-            raw_credentials = f"{secret}:{secret}"
+            # Graylog access tokens use the token as the Basic Auth username
+            # and the literal string "token" as the password.
+            raw_credentials = f"{secret}:token"
         else:
             username, password = self._basic_credentials() or ("", "")
             raw_credentials = f"{username}:{password}"

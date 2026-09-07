@@ -40,13 +40,21 @@ def test_search_messages_uses_current_graylog_endpoint_and_query_payload() -> No
         captured["method"] = request.method
         captured["path"] = request.url.path
         captured["body"] = request.read().decode()
-        return httpx.Response(200, json={"messages": [], "total_results": 0})
+        return httpx.Response(
+            200,
+            json={
+                "schema": [{"column_type": "field", "field": "message"}],
+                "datarows": [],
+                "metadata": {"effective_timerange": {}},
+            },
+        )
 
     client = make_client(handler)
 
     result = client.search_messages(make_search("level:ERROR"))
 
-    assert result["total_results"] == 0
+    assert result["datarows"] == []
+    assert result["schema"][0]["field"] == "message"
     assert captured["method"] == "POST"
     assert captured["path"] == "/api/search/messages"
     body = json.loads(captured["body"])
