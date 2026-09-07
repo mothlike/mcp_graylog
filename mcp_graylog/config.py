@@ -92,6 +92,11 @@ class ServerSettings(BaseSettings):
     port: int = Field(8000, ge=1, le=65535)
     path: str = Field("/mcp")
     log_level: str = Field("INFO")
+    dns_rebinding_protection: bool = Field(True)
+    allowed_hosts: str = Field("127.0.0.1:*,localhost:*,[::1]:*")
+    allowed_origins: str = Field(
+        "http://127.0.0.1:*,http://localhost:*,http://[::1]:*"
+    )
 
     model_config = SettingsConfigDict(
         env_prefix="MCP_SERVER_",
@@ -100,6 +105,16 @@ class ServerSettings(BaseSettings):
         case_sensitive=False,
         extra="ignore",
     )
+
+    def allowed_host_values(self) -> list[str]:
+        return self._split_csv(self.allowed_hosts)
+
+    def allowed_origin_values(self) -> list[str]:
+        return self._split_csv(self.allowed_origins)
+
+    @staticmethod
+    def _split_csv(value: str) -> list[str]:
+        return [item.strip() for item in value.split(",") if item.strip()]
 
 
 def load_graylog_settings() -> GraylogSettings:

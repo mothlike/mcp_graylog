@@ -44,6 +44,9 @@ def test_docker_compose_uses_explicit_env_without_insecure_defaults():
     assert "GRAYLOG_TOKEN: ${GRAYLOG_TOKEN}" in compose
     assert "GRAYLOG_VERIFY_SSL: ${GRAYLOG_VERIFY_SSL:-true}" in compose
     assert "GRAYLOG_TIMEOUT: ${GRAYLOG_TIMEOUT:-30}" in compose
+    assert "MCP_SERVER_DNS_REBINDING_PROTECTION" in compose
+    assert "MCP_SERVER_ALLOWED_HOSTS" in compose
+    assert "MCP_SERVER_ALLOWED_ORIGINS" in compose
     assert "admin" not in compose
     assert "mock-graylog" not in compose
     assert "./logs" not in compose

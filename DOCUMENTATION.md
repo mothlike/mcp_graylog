@@ -211,8 +211,16 @@ Use Streamable HTTP only when stdio is not appropriate:
 ```sh
 GRAYLOG_ENDPOINT="https://graylog.example.com" \
 GRAYLOG_TOKEN="gl2-your-token" \
+MCP_SERVER_ALLOWED_HOSTS="mcp.example.com,mcp.example.com:*" \
 uv run mcp-graylog --transport streamable-http --host 0.0.0.0 --port 8000 --path /mcp
 ```
+
+Streamable HTTP validates the `Host` header. Set
+`MCP_SERVER_ALLOWED_HOSTS` to a comma-separated list of public hostnames or IP
+addresses. Include `hostname:*` when the exposed port can vary. Browser clients
+must also list their origins in `MCP_SERVER_ALLOWED_ORIGINS`.
+Set `MCP_SERVER_DNS_REBINDING_PROTECTION=false` to accept any Host and Origin
+only when a trusted reverse proxy performs equivalent validation.
 
 Transport selection is explicit:
 

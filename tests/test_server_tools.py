@@ -175,7 +175,7 @@ def test_create_mcp_server_returns_current_mcp_server() -> None:
     server = create_mcp_server(FakeGraylogClient())
 
     assert isinstance(server, MCPServer)
-    assert server.version == "0.3.0"
+    assert server.version == "0.3.1"
 
 
 @pytest.mark.asyncio

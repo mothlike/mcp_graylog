@@ -14,6 +14,7 @@ def assert_current_docs(text: str) -> None:
     assert "/api/streams" in text
     assert "/api/streams/{stream_id}" in text
     assert "/api/system" in text
+    assert "MCP_SERVER_ALLOWED_HOSTS" in text
     assert "/health_check" not in text
     assert "python -m mcp_graylog.server" not in text
     assert "/api/search/universal" not in text
@@ -98,6 +99,8 @@ def test_env_example_is_token_first_stdio_config() -> None:
 
     assert "GRAYLOG_TOKEN" in text
     assert "MCP_SERVER_TRANSPORT=stdio" in text
+    assert "MCP_SERVER_DNS_REBINDING_PROTECTION=true" in text
+    assert "MCP_SERVER_ALLOWED_HOSTS=" in text
     assert "GRAYLOG_PASSWORD" not in text
 
 

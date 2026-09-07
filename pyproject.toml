@@ -1,6 +1,6 @@
 [project]
 name = "mcp-graylog"
-version = "0.3.0"
+version = "0.3.1"
 description = "MCP server for Graylog integration"
 authors = [
     {name = "MCP Graylog Team", email = "team@example.com"}

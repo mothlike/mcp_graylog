@@ -220,6 +220,7 @@ or host:
 ```sh
 GRAYLOG_ENDPOINT="https://graylog.example.com" \
 GRAYLOG_TOKEN="gl2-your-token" \
+MCP_SERVER_ALLOWED_HOSTS="mcp.example.com,mcp.example.com:*" \
 uv run mcp-graylog --transport streamable-http --host 0.0.0.0 --port 8000 --path /mcp
 ```
 
@@ -230,7 +231,18 @@ MCP_SERVER_TRANSPORT=streamable-http
 MCP_SERVER_HOST=0.0.0.0
 MCP_SERVER_PORT=8000
 MCP_SERVER_PATH=/mcp
+MCP_SERVER_DNS_REBINDING_PROTECTION=true
+MCP_SERVER_ALLOWED_HOSTS=mcp.example.com,mcp.example.com:*
+MCP_SERVER_ALLOWED_ORIGINS=https://app.example.com
 ```
+
+`MCP_SERVER_ALLOWED_HOSTS` contains the exact hostnames accepted by the HTTP
+transport. Add both the bare hostname and `hostname:*` when clients may use an
+explicit port. For a direct IP deployment, use a value such as
+`192.0.2.10:*`. Configure `MCP_SERVER_ALLOWED_ORIGINS` only for browser clients.
+To accept requests for any host behind a trusted reverse proxy, set
+`MCP_SERVER_DNS_REBINDING_PROTECTION=false`. This disables both Host and Origin
+validation and should not be used when the server is exposed directly.
 
 ## Configuration
 
@@ -244,6 +256,9 @@ MCP_SERVER_PATH=/mcp
 | `MCP_SERVER_HOST` | no | `127.0.0.1` | Streamable HTTP bind host. |
 | `MCP_SERVER_PORT` | no | `8000` | Streamable HTTP bind port. |
 | `MCP_SERVER_PATH` | no | `/mcp` | Streamable HTTP MCP path. |
+| `MCP_SERVER_DNS_REBINDING_PROTECTION` | no | `true` | Validate HTTP Host and Origin headers. |
+| `MCP_SERVER_ALLOWED_HOSTS` | no | localhost values | Comma-separated allowed Host values. |
+| `MCP_SERVER_ALLOWED_ORIGINS` | no | localhost values | Comma-separated allowed browser origins. |
 | `LOG_LEVEL` | no | `INFO` | Server log level. |
 
 ## Graylog 6+ API Compatibility

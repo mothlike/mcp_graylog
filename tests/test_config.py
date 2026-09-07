@@ -3,7 +3,7 @@ import base64
 import pytest
 from pydantic import SecretStr, ValidationError
 
-from mcp_graylog.config import GraylogSettings
+from mcp_graylog.config import GraylogSettings, ServerSettings
 
 
 @pytest.fixture(autouse=True)
@@ -113,3 +113,17 @@ def test_endpoint_must_be_absolute_http_url():
                 token=SecretStr("token-value"),
                 _env_file=None,
             )
+
+
+def test_server_settings_parse_transport_security_allowlists():
+    settings = ServerSettings(
+        allowed_hosts=" 10.100.125.139:* , mcp.example.test ",
+        allowed_origins=" https://app.example.test , ",
+        _env_file=None,
+    )
+
+    assert settings.allowed_host_values() == [
+        "10.100.125.139:*",
+        "mcp.example.test",
+    ]
+    assert settings.allowed_origin_values() == ["https://app.example.test"]
